@@ -1,6 +1,3 @@
-# dobna
-
-
 assets/
 │
 ├── animations/                                    🎬 انیمیشن‌های Lottie (JSON)
