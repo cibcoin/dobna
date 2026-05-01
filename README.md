@@ -54,8 +54,7 @@ assets/
 │   │   ├── avatar-8.png                           # آواتار شماره ۸
 │   │   ├── avatar-9.png                       # آواتار شماره ۹
 │   │   ├── avatar-10.png                      # آواتار شماره ۱۰
-│   │   ├── avatar-11.png                         
-#  شماره 
+│   │   ├── avatar-11.png                          
 │   │   ├── avatar-12.png                           # آواتار شماره ۱۲
 │   │   ├── avatar-13.png                           # آواتار شماره ۱۳
 │   │   ├── avatar-14.png                           # آواتار شماره ۱۴
