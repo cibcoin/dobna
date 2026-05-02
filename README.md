@@ -172,7 +172,7 @@ assets/
         ├── game-end.mp3                           # پایان بازی
         └── waiting-room.mp3                       # اتاق انتظار
 
-bingo-game/
+src/
 ├── app/
 │   ├── (auth)/
 │   │   ├── login.tsx
