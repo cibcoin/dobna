@@ -22,3 +22,12 @@ npm install react-hook-form zod  # برای فرم‌ها
 npm install -D @types/react-native-vector-icons tailwindcss
 
  https://github.com/cibcoin/dobna.git
+
+# اجرا روی اندروید
+npx expo start --android
+
+# یا روی iOS (فقط مک)
+npx expo start --ios
+
+# یا روی وب
+npx expo start --web
