@@ -177,46 +177,37 @@ assets/
 
 📊 جدول آماری نهایی
 
-دسته زیردسته تعداد فایل فرمت
-
-animations/ - 9 JSON
-
-fonts/ - 7 TTF
-
-images/ root 5 PNG
-
- notes/ 5 PNG
-
- backgrounds/ 3 PNG/WEBP
-
- avatars/ 12 PNG
-
- badges/ 4 PNG
-
- cards/ 3 PNG
-
-icons/ ui/ 17 SVG/PNG
-
- flags/ 2 SVG
-
- social/ 4 SVG
-
-lottie/ - 11 JSON
-
-sounds/ ui/ 6 MP3
-
- game/ 6 MP3
-
- transaction/ 5 MP3
-
- notification/ 5 MP3
-
- auth/ 3 MP3
-
- effects/ 6 MP3/WAV
-
- ambient/ 4 MP3
-
-مجموع کل - 97 -
-
----
+bingo-game/
+├── app/
+│   ├── (auth)/
+│   │   ├── login.tsx
+│   │   ├── register.tsx
+│   │   └── _layout.tsx
+│   ├── (tabs)/
+│   │   ├── index.tsx          # صفحه اصلی/لابی
+│   │   ├── rooms.tsx          # لیست اتاق‌ها
+│   │   ├── profile.tsx        # پروفایل کاربر
+│   │   ├── chat.tsx           # چت عمومی
+│   │   └── _layout.tsx
+│   ├── game/
+│   │   └── [roomId].tsx       # صفحه بازی
+│   └── _layout.tsx
+├── components/
+│   ├── RoomCard.tsx
+│   ├── ChatMessage.tsx
+│   ├── BingoCard.tsx
+│   └── BalanceCard.tsx
+├── lib/
+│   ├── supabase.ts            # کلاینت Supabase
+│   ├── auth.ts                # توابع احراز هویت
+│   └── gameLogic.ts           # منطق بازی
+├── stores/
+│   ├── authStore.ts
+│   ├── gameStore.ts
+│   └── chatStore.ts
+├── constants/
+│   └── colors.ts
+├── package.json
+├── app.json
+├── tsconfig.json
+└── .env                       # متغیرهای محیطی
