@@ -171,6 +171,45 @@ assets/
         ├── game-start.mp3                         # شروع بازی
         ├── game-end.mp3                           # پایان بازی
         └── waiting-room.mp3                       # اتاق انتظار
+
+bingo-game/
+├── app/
+│   ├── (auth)/
+│   │   ├── login.tsx
+│   │   ├── register.tsx
+│   │   └── _layout.tsx
+│   ├── (tabs)/
+│   │   ├── index.tsx          # صفحه اصلی/لابی
+│   │   ├── rooms.tsx          # لیست اتاق‌ها
+│   │   ├── profile.tsx        # پروفایل کاربر
+│   │   ├── chat.tsx           # چت عمومی
+│   │   └── _layout.tsx
+│   ├── game/
+│   │   └── [roomId].tsx       # صفحه بازی
+│   └── _layout.tsx
+├── components/
+│   ├── RoomCard.tsx
+│   ├── ChatMessage.tsx
+│   ├── BingoCard.tsx
+│   └── BalanceCard.tsx
+├── lib/
+│   ├── supabase.ts            # کلاینت Supabase
+│   ├── auth.ts                # توابع احراز هویت
+│   └── gameLogic.ts           # منطق بازی
+├── stores/
+│   ├── authStore.ts
+│   ├── gameStore.ts
+│   └── chatStore.ts
+├── constants/
+│   └── colors.ts
+├── package.json
+├── app.json
+├── tsconfig.json
+└── .env                       # متغیرهای محیطی
+```
+
+---
+
 ```
 
 
