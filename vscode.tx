@@ -1,0 +1,33 @@
+# 1. نصب Expo CLI (اگر ندارید)
+npm install -g expo-cli
+
+# 2. ایجاد پروژه جدید React Native با TypeScript
+npx create-expo-app bingo-game --template
+
+# انتخاب کنید: "Blank (TypeScript)"
+
+# 3. ورود به پوشه پروژه
+cd bingo-game
+
+# 4. نصب کتابخانه‌های مورد نیاز
+npm install @supabase/supabase-js @react-navigation/native @react-navigation/stack @react-navigation/bottom-tabs
+npm install react-native-screens react-native-safe-area-context react-native-gesture-handler
+npm install react-native-reanimated react-native-vector-icons
+npm install expo-secure-store expo-image-picker
+npm install react-native-svg react-native-webview
+npm install zustand  # برای state management
+npm install react-hook-form zod  # برای فرم‌ها
+
+# 5. نصب dev dependencies
+npm install -D @types/react-native-vector-icons tailwindcss
+
+# 6. مقداردهی اولیه git
+git init
+git add .
+git commit -m "Initial commit: Bingo game setup"
+
+# 7. ایجاد مخزن در GitHub (ابتدا در GitHub.com ایجاد کنید)
+# سپس ریموت را اضافه کنید:
+git remote add origin https://github.com/[your-username]/bingo-game.git
+git branch -M main
+git push -u origin main
