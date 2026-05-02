@@ -246,3 +246,6 @@ bingo-game/
 ├── app.json
 ├── tsconfig.json
 └── .env                       # متغیرهای محیطی
+```
+
+---
