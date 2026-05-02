@@ -7,7 +7,7 @@ npx create-expo-app bingo-game --template
 # انتخاب کنید: "Blank (TypeScript)"
 
 # 3. ورود به پوشه پروژه
-cd bingo-game
+cd dobna-game
 
 # 4. نصب کتابخانه‌های مورد نیاز
 npm install @supabase/supabase-js @react-navigation/native @react-navigation/stack @react-navigation/bottom-tabs
@@ -21,13 +21,4 @@ npm install react-hook-form zod  # برای فرم‌ها
 # 5. نصب dev dependencies
 npm install -D @types/react-native-vector-icons tailwindcss
 
-# 6. مقداردهی اولیه git
-git init
-git add .
-git commit -m "Initial commit: Bingo game setup"
-
-# 7. ایجاد مخزن در GitHub (ابتدا در GitHub.com ایجاد کنید)
-# سپس ریموت را اضافه کنید:
-git remote add origin https://github.com/[your-username]/bingo-game.git
-git branch -M main
-git push -u origin main
+ https://github.com/cibcoin/dobna.git
