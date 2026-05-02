@@ -190,7 +190,7 @@ src/
 ├── components/
 │   ├── RoomCard.tsx
 │   ├── ChatMessage.tsx
-│   ├── BingoCard.tsx
+│   ├── DobnaCard.tsx
 │   └── BalanceCard.tsx
 ├── lib/
 │   ├── supabase.ts            # کلاینت Supabase
