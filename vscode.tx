@@ -31,3 +31,8 @@ npx expo start --ios
 
 # یا روی وب
 npx expo start --web
+
+# برای پخش صدا در React Native
+expo install expo-speech expo-av
+
+# برای وب، نیاز به نصب خاصی نیست (از Web Speech API استفاده می‌کند)
