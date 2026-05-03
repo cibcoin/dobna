@@ -1,202 +1,159 @@
 // lib/standardCards.ts
 
-interface DobnaCard {
-  id: number;
-  numbers: (number | null)[][]; // 3x9 matrix, null = خالی
-}
+export type DobnaCardData = {
+  cardNumber: number;
+  row1: number[];
+  row2: number[];
+  row3: number[];
+};
 
-// محدوده اعداد هر ستون
-const COLUMN_RANGES = [
-  { min: 1, max: 9, count: 9 },     // ستون 1
-  { min: 10, max: 19, count: 10 },   // ستون 2
-  { min: 20, max: 29, count: 10 },   // ستون 3
-  { min: 30, max: 39, count: 10 },   // ستون 4
-  { min: 40, max: 49, count: 10 },   // ستون 5
-  { min: 50, max: 59, count: 10 },   // ستون 6
-  { min: 60, max: 69, count: 10 },   // ستون 7
-  { min: 70, max: 79, count: 10 },   // ستون 8
-  { min: 80, max: 90, count: 11 }    // ستون 9
+// کارت‌های استاندارد (برای استفاده در کلاینت بدون نیاز به دیتابیس)
+export const STANDARD_CARDS: DobnaCardData[] = [
+  { cardNumber: 1, row1: [1, 0, 22, 0, 45, 53, 0, 78, 0], row2: [0, 14, 0, 37, 0, 0, 67, 0, 85], row3: [7, 0, 0, 32, 48, 59, 0, 72, 90] },
+  { cardNumber: 2, row1: [0, 11, 23, 35, 0, 0, 64, 0, 83], row2: [5, 0, 0, 0, 44, 58, 0, 77, 0], row3: [0, 18, 29, 0, 49, 0, 61, 79, 86] },
+  { cardNumber: 3, row1: [3, 0, 0, 31, 0, 56, 68, 0, 81], row2: [0, 12, 28, 0, 42, 0, 0, 73, 0], row3: [9, 0, 0, 38, 47, 0, 69, 0, 88] },
+  { cardNumber: 4, row1: [0, 15, 24, 0, 41, 52, 0, 71, 82], row2: [2, 0, 0, 34, 0, 0, 62, 0, 0], row3: [8, 0, 27, 39, 0, 57, 0, 76, 89] },
+  { cardNumber: 5, row1: [6, 0, 21, 33, 0, 54, 66, 0, 84], row2: [0, 13, 0, 0, 46, 0, 63, 75, 0], row3: [0, 19, 26, 0, 43, 55, 0, 74, 87] },
+  { cardNumber: 6, row1: [0, 16, 25, 0, 0, 51, 0, 70, 80], row2: [4, 0, 0, 36, 47, 0, 65, 0, 88], row3: [0, 20, 0, 39, 0, 58, 0, 77, 90] },
+  { cardNumber: 7, row1: [8, 0, 20, 34, 0, 55, 0, 74, 85], row2: [0, 17, 0, 0, 44, 0, 66, 79, 0], row3: [1, 0, 28, 0, 49, 57, 0, 0, 87] },
+  { cardNumber: 8, row1: [0, 10, 0, 30, 45, 0, 62, 0, 82], row2: [5, 0, 24, 0, 0, 53, 0, 76, 0], row3: [9, 0, 0, 38, 48, 0, 69, 78, 90] },
+  { cardNumber: 9, row1: [2, 0, 21, 0, 42, 56, 0, 71, 84], row2: [0, 14, 0, 35, 0, 0, 64, 0, 86], row3: [7, 0, 29, 0, 49, 58, 0, 75, 0] },
+  { cardNumber: 10, row1: [0, 18, 26, 37, 0, 52, 67, 0, 83], row2: [3, 0, 0, 0, 46, 0, 0, 73, 89], row3: [0, 11, 0, 39, 47, 59, 68, 0, 0] },
+  { cardNumber: 11, row1: [4, 0, 22, 0, 43, 54, 0, 72, 81], row2: [0, 12, 0, 34, 0, 0, 63, 0, 87], row3: [6, 0, 27, 0, 48, 57, 0, 77, 90] },
+  { cardNumber: 12, row1: [0, 13, 23, 0, 41, 55, 65, 0, 85], row2: [7, 0, 0, 36, 0, 0, 0, 74, 0], row3: [0, 19, 0, 38, 49, 56, 68, 79, 0] },
+  { cardNumber: 13, row1: [1, 0, 25, 33, 0, 51, 0, 70, 88], row2: [0, 15, 0, 0, 45, 0, 62, 0, 0], row3: [8, 0, 28, 0, 47, 58, 0, 76, 89] },
+  { cardNumber: 14, row1: [0, 10, 0, 31, 44, 0, 66, 0, 82], row2: [5, 0, 24, 0, 0, 53, 0, 75, 86], row3: [9, 0, 0, 39, 48, 0, 69, 78, 0] },
+  { cardNumber: 15, row1: [2, 0, 20, 0, 42, 56, 0, 71, 84], row2: [0, 16, 0, 35, 0, 0, 64, 0, 87], row3: [7, 0, 29, 0, 49, 57, 0, 74, 90] },
+  { cardNumber: 16, row1: [0, 17, 26, 37, 0, 52, 67, 0, 83], row2: [3, 0, 0, 0, 46, 0, 0, 73, 88], row3: [0, 12, 0, 38, 47, 59, 68, 0, 0] },
+  { cardNumber: 17, row1: [4, 0, 21, 0, 43, 54, 0, 72, 81], row2: [0, 11, 0, 34, 0, 0, 63, 0, 86], row3: [6, 0, 27, 0, 48, 56, 0, 77, 90] },
+  { cardNumber: 18, row1: [0, 14, 23, 0, 41, 55, 65, 0, 85], row2: [8, 0, 0, 36, 0, 0, 0, 74, 0], row3: [0, 18, 0, 39, 49, 57, 67, 78, 0] },
+  { cardNumber: 19, row1: [1, 0, 24, 32, 0, 50, 0, 70, 89], row2: [0, 15, 0, 0, 44, 0, 61, 0, 0], row3: [9, 0, 28, 0, 47, 58, 0, 76, 88] },
+  { cardNumber: 20, row1: [0, 19, 0, 30, 45, 0, 66, 0, 82], row2: [5, 0, 25, 0, 0, 53, 0, 75, 86], row3: [8, 0, 0, 38, 48, 0, 69, 77, 0] },
+  { cardNumber: 21, row1: [2, 0, 22, 0, 42, 56, 0, 71, 83], row2: [0, 13, 0, 35, 0, 0, 64, 0, 87], row3: [7, 0, 29, 0, 49, 57, 0, 74, 90] },
+  { cardNumber: 22, row1: [0, 16, 26, 37, 0, 52, 67, 0, 84], row2: [3, 0, 0, 0, 46, 0, 0, 73, 89], row3: [0, 11, 0, 39, 47, 58, 68, 0, 0] },
+  { cardNumber: 23, row1: [4, 0, 20, 0, 43, 54, 0, 72, 81], row2: [0, 12, 0, 34, 0, 0, 63, 0, 86], row3: [6, 0, 27, 0, 48, 56, 0, 77, 90] },
+  { cardNumber: 24, row1: [0, 17, 23, 0, 41, 55, 65, 0, 85], row2: [8, 0, 0, 36, 0, 0, 0, 74, 0], row3: [0, 18, 0, 38, 49, 57, 67, 79, 0] },
+  { cardNumber: 25, row1: [1, 0, 25, 33, 0, 51, 0, 70, 88], row2: [0, 14, 0, 0, 45, 0, 62, 0, 0], row3: [9, 0, 28, 0, 47, 58, 0, 76, 89] },
+  { cardNumber: 26, row1: [0, 10, 0, 31, 44, 0, 66, 0, 82], row2: [5, 0, 24, 0, 0, 53, 0, 75, 86], row3: [8, 0, 0, 39, 48, 0, 69, 78, 0] },
+  { cardNumber: 27, row1: [2, 0, 21, 0, 42, 56, 0, 71, 84], row2: [0, 15, 0, 35, 0, 0, 64, 0, 87], row3: [7, 0, 29, 0, 49, 57, 0, 74, 90] },
+  { cardNumber: 28, row1: [0, 19, 26, 37, 0, 52, 67, 0, 83], row2: [3, 0, 0, 0, 46, 0, 0, 73, 88], row3: [0, 11, 0, 38, 47, 59, 68, 0, 0] },
+  { cardNumber: 29, row1: [4, 0, 22, 0, 43, 54, 0, 72, 81], row2: [0, 13, 0, 34, 0, 0, 63, 0, 86], row3: [6, 0, 27, 0, 48, 56, 0, 77, 90] },
+  { cardNumber: 30, row1: [0, 18, 23, 0, 41, 55, 65, 0, 85], row2: [8, 0, 0, 36, 0, 0, 0, 74, 0], row3: [0, 16, 0, 39, 49, 57, 67, 79, 0] }
 ];
 
-// تولید یک کارت تصادفی استاندارد
-export function generateStandardCard(): (number | null)[][] {
-  // ایجاد ماتریس 3x9 خالی
-  const card: (number | null)[][] = [
-    [null, null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null, null]
-  ];
-  
-  // برای هر ستون، 2 عدد تصادفی انتخاب کن
-  for (let col = 0; col < 9; col++) {
-    const range = COLUMN_RANGES[col];
-    const allNumbers = Array.from(
-      { length: range.count }, 
-      (_, i) => range.min + i
-    );
-    
-    // انتخاب 2 عدد تصادفی از این ستون
-    const shuffled = [...allNumbers];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    const selectedNumbers = shuffled.slice(0, 2);
-    
-    // مرتب کردن اعداد صعودی
-    selectedNumbers.sort((a, b) => a - b);
-    
-    // قرار دادن اعداد در ردیف‌های تصادفی (اما مرتب)
-    // طبق استاندارد، اعداد در هر ستون باید از بالا به پایین صعودی باشند
-    // پس عدد کوچکتر در ردیف بالا، بزرگتر در ردیف پایین
-    const rows = [0, 1, 2];
-    for (let i = rows.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [rows[i], rows[j]] = [rows[j], rows[i]];
-    }
-    // مرتب کردن rows بر اساس مقدار اعداد
-    if (selectedNumbers[0] < selectedNumbers[1]) {
-      card[rows[0]][col] = selectedNumbers[0];
-      card[rows[1]][col] = selectedNumbers[1];
-    } else {
-      card[rows[0]][col] = selectedNumbers[1];
-      card[rows[1]][col] = selectedNumbers[0];
-    }
-  }
-  
-  // بررسی: هر ردیف باید دقیقاً 5 عدد داشته باشد
-  // اگر ردیفی کمتر از 5 عدد داشت، اصلاح کن
-  for (let row = 0; row < 3; row++) {
-    let numberCount = card[row].filter(v => v !== null).length;
-    
-    if (numberCount < 5) {
-      // این وضعیت نادر است، اما اگر پیش آمد، از ستون‌های خالی عدد اضافه کن
-      const missingCount = 5 - numberCount;
-      const emptyCols = card[row]
-        .map((v, idx) => v === null ? idx : -1)
-        .filter(idx => idx !== -1);
-      
-      for (let i = 0; i < missingCount && i < emptyCols.length; i++) {
-        const col = emptyCols[i];
-        const range = COLUMN_RANGES[col];
-        // پیدا کردن عدد استفاده نشده در این ستون
-        const usedInColumn = [card[0][col], card[1][col], card[2][col]]
-          .filter(v => v !== null);
-        const available = Array.from(
-          { length: range.count },
-          (_, i) => range.min + i
-        ).filter(n => !usedInColumn.includes(n));
-        
-        if (available.length > 0) {
-          card[row][col] = available[0];
-        }
-      }
-    }
-  }
-  
-  return card;
+// گرفتن کارت بر اساس شماره
+export function getCardByNumber(cardNumber: number): BingoCardData | null {
+  return STANDARD_CARDS.find(card => card.cardNumber === cardNumber) || null;
 }
 
-// تولید 30 کارت یکتا برای هر اتاق
-export function generate30UniqueCards(): (number | null)[][][] {
-  const cards: (number | null)[][][] = [];
-  const cardStrings = new Set<string>();
-  
-  while (cards.length < 30) {
-    const newCard = generateStandardCard();
-    const cardKey = JSON.stringify(newCard);
-    
-    // جلوگیری از تکرار کارت‌های مشابه
-    if (!cardStrings.has(cardKey)) {
-      cardStrings.add(cardKey);
-      cards.push(newCard);
-    }
-  }
-  
-  return cards;
+// گرفتن چند کارت مشخص
+export function getCardsByNumbers(cardNumbers: number[]): BingoCardData[] {
+  return STANDARD_CARDS.filter(card => cardNumbers.includes(card.cardNumber));
 }
 
-// کارت‌های از پیش تعریف شده (برای تست و اطمینان از استاندارد بودن)
-export const PREdefined_CARDS: (number | null)[][][] = [
-  // کارت 1
-  [
-    [1, null, 22, null, 45, 53, null, 78, null],
-    [null, 14, null, 37, null, null, 67, null, 85],
-    [7, null, null, 32, 48, 59, null, 72, 90]
-  ],
-  // کارت 2
-  [
-    [null, 11, 23, 35, null, null, 64, null, 83],
-    [5, null, null, null, 44, 58, null, 77, null],
-    [null, 18, 29, null, 49, null, 61, 79, 86]
-  ],
-  // کارت 3
-  [
-    [3, null, null, 31, null, 56, 68, null, 81],
-    [null, 12, 28, null, 42, null, null, 73, null],
-    [9, null, null, 38, 47, null, 69, null, 88]
-  ],
-  // کارت 4
-  [
-    [null, 15, 24, null, 41, 52, null, 71, 82],
-    [2, null, null, 34, null, null, 62, null, null],
-    [8, null, 27, 39, null, 57, null, 76, 89]
-  ],
-  // کارت 5
-  [
-    [6, null, 21, 33, null, 54, 66, null, 84],
-    [null, 13, null, null, 46, null, 63, 75, null],
-    [null, 19, 26, null, 43, 55, null, 74, 87]
-  ],
-  // کارت‌های 6 تا 30 مشابه با اعداد متفاوت...
-  // در تولید واقعی، از تابع generateStandardCard استفاده کنید
-];
+// گرفتن کارت‌های باقیمانده (برای پر کردن ۳۰ کارت)
+export function getRemainingCards(assignedCardNumbers: number[]): BingoCardData[] {
+  return STANDARD_CARDS.filter(card => !assignedCardNumbers.includes(card.cardNumber));
+}
 
-// تابع اعتبارسنجی کارت (چک کردن استانداردها)
-export function validateCard(card: (number | null)[][]): boolean {
-  // 1. چک کردن ابعاد
-  if (card.length !== 3) return false;
-  for (const row of card) {
-    if (row.length !== 9) return false;
+// تابع توزیع کارت به بازیکنان (با کارت‌های استاندارد)
+export function distributeStandardCards(
+  players: { userId: string; userName: string; requestedCards: number }[]
+): { userId: string; userName: string; cards: BingoCardData[] }[] {
+  const result: { userId: string; userName: string; cards: BingoCardData[] }[] = [];
+  let nextCardIndex = 0;
+  
+  for (const player of players) {
+    const playerCards: BingoCardData[] = [];
+    for (let i = 0; i < player.requestedCards && nextCardIndex < STANDARD_CARDS.length; i++) {
+      playerCards.push(STANDARD_CARDS[nextCardIndex]);
+      nextCardIndex++;
+    }
+    result.push({
+      userId: player.userId,
+      userName: player.userName,
+      cards: playerCards
+    });
   }
   
-  // 2. چک کردن تعداد اعداد در هر ردیف (باید 5 باشد)
-  for (let row = 0; row < 3; row++) {
-    const numberCount = card[row].filter(v => v !== null).length;
-    if (numberCount !== 5) return false;
+  return result;
+}
+
+// اعتبارسنجی یک کارت (بر اساس استانداردهای بینگو)
+export function validateStandardCard(card: BingoCardData): boolean {
+  // 1. بررسی ابعاد
+  if (card.row1.length !== 9 || card.row2.length !== 9 || card.row3.length !== 9) {
+    return false;
   }
   
-  // 3. چک کردن تعداد اعداد در هر ستون (حداکثر 2)
+  // 2. بررسی هر ردیف دقیقاً 5 عدد داشته باشد (0 نشان‌دهنده خالی)
+  const countNumbers = (row: number[]) => row.filter(n => n !== 0).length;
+  if (countNumbers(card.row1) !== 5 || countNumbers(card.row2) !== 5 || countNumbers(card.row3) !== 5) {
+    return false;
+  }
+  
+  // 3. بررسی هر ستون حداکثر 2 عدد داشته باشد
   for (let col = 0; col < 9; col++) {
-    const numberCount = [card[0][col], card[1][col], card[2][col]]
-      .filter(v => v !== null).length;
-    if (numberCount > 2) return false;
-  }
-  
-  // 4. چک کردن محدوده اعداد در هر ستون
-  for (let col = 0; col < 9; col++) {
-    const range = COLUMN_RANGES[col];
-    for (let row = 0; row < 3; row++) {
-      const value = card[row][col];
-      if (value !== null && (value < range.min || value > range.max)) {
+    const columnNumbers = [card.row1[col], card.row2[col], card.row3[col]].filter(n => n !== 0);
+    if (columnNumbers.length > 2) {
+      return false;
+    }
+    // بررسی ترتیب صعودی در ستون
+    for (let i = 0; i < columnNumbers.length - 1; i++) {
+      if (columnNumbers[i] > columnNumbers[i + 1]) {
         return false;
       }
     }
   }
   
-  // 5. چک کردن عدم تکرار اعداد در کل کارت
-  const allNumbers = card.flat().filter(v => v !== null);
+  // 4. بررسی عدم تکرار اعداد در کل کارت
+  const allNumbers = [...card.row1, ...card.row2, ...card.row3].filter(n => n !== 0);
   const uniqueNumbers = new Set(allNumbers);
-  if (allNumbers.length !== uniqueNumbers.size) return false;
+  if (allNumbers.length !== uniqueNumbers.size) {
+    return false;
+  }
   
-  // 6. چک کردن ترتیب صعودی در هر ستون
-  for (let col = 0; col < 9; col++) {
-    const columnValues = [card[0][col], card[1][col], card[2][col]]
-      .filter(v => v !== null) as number[];
-    for (let i = 0; i < columnValues.length - 1; i++) {
-      if (columnValues[i] > columnValues[i + 1]) return false;
+  // 5. بررسی محدوده اعداد (1 تا 90)
+  for (const num of allNumbers) {
+    if (num < 1 || num > 90) {
+      return false;
     }
   }
   
   return true;
+}
+
+// نمایش کارت به صورت گرافیکی در console
+export function printStandardCard(card: BingoCardData) {
+  console.log(`\n📋 کارت استاندارد شماره ${card.cardNumber}:`);
+  console.log('┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐');
+  
+  const rows = [card.row1, card.row2, card.row3];
+  for (let row of rows) {
+    let rowStr = '│';
+    for (let val of row) {
+      if (val === 0) {
+        rowStr += '  ○  │';
+      } else {
+        rowStr += ` ${val.toString().padStart(2, ' ')}  │`;
+      }
+    }
+    console.log(rowStr);
+    console.log('├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤');
+  }
+  console.log('└─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘');
+}
+
+// اعتبارسنجی همه 30 کارت استاندارد
+export function validateAllStandardCards(): boolean {
+  let allValid = true;
+  for (const card of STANDARD_CARDS) {
+    if (!validateStandardCard(card)) {
+      console.error(`❌ کارت شماره ${card.cardNumber} نامعتبر است!`);
+      allValid = false;
+    } else {
+      console.log(`✅ کارت شماره ${card.cardNumber} معتبر است`);
+    }
+  }
+  return allValid;
 }
