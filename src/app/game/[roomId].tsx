@@ -118,6 +118,35 @@ export default function GameScreen() {
       setBlinkingNumber(null);
     }, 500);
   };
+
+// app/game/[roomId].tsx (بخش توزیع کارت)
+
+import { distributeStandardCards, getCardByNumber, STANDARD_CARDS } from '../../lib/standardCards';
+
+// هنگام شروع بازی
+const startGameWithStandardCards = async (players: PlayerInfo[]) => {
+  // توزیع کارت‌های استاندارد به بازیکنان
+  const distribution = distributeStandardCards(players);
+  
+  // ذخیره در دیتابیس
+  for (const player of distribution) {
+    for (const card of player.cards) {
+      await supabase.from('game_cards_extended').insert({
+        game_id: gameId,
+        user_id: player.userId,
+        card_number: card.cardNumber,
+        card_data: [card.row1, card.row2, card.row3],
+        marked_numbers: [],
+        line_completed: [false, false, false]
+      });
+    }
+  }
+  
+  console.log('توزیع کارت‌ها:');
+  distribution.forEach(p => {
+    console.log(`${p.userName}: کارت‌های ${p.cards.map(c => c.cardNumber).join(', ')}`);
+  });
+};
   
   const checkForWinners = (number: number) => {
     // بررسی برنده خطی در کارت‌های کاربر
