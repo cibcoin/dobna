@@ -21,7 +21,7 @@ interface DobnaCardProps {
   onBlinkComplete?: () => void;
 }
 
-export default function BingoCardWithBlink({
+export default function DobnaCardWithBlink({
   cardNumber,
   userName,
   numbers,
