@@ -893,3 +893,306 @@ create index idx_active_rooms_status on public.active_rooms(status, tier_id);
 create index idx_waiting_queue_tier on public.waiting_queue(tier_id, status);
 create index idx_active_games_room on public.active_games(room_id, status);
 create index idx_game_cards_game on public.game_cards_extended(game_id, user_id);
+
+-- ============================================
+-- جداول سیستم داور
+-- ============================================
+
+-- 1. جدول تاریخچه برندگان
+create table public.winners_history (
+    id uuid default uuid_generate_v4() primary key,
+    game_id uuid references public.active_games(id),
+    room_id uuid references public.active_rooms(id),
+    winner_type text not null check (winner_type in ('line', 'full_house')),
+    winner_user_id uuid references public.profiles(id),
+    winner_user_name text not null,
+    card_number integer not null,  -- شماره کارت برنده (1 تا 30)
+    line_index integer,  -- اگر برنده خطی است، کدام ردیف (0,1,2)
+    prize_amount bigint not null,
+    is_shared boolean default false,  -- آیا جایزه تقسیم شده؟
+    shared_with integer default 1,    -- تعداد برندگان همزمان
+    created_at timestamp with time zone default now()
+);
+
+-- 2. جدول تسویه‌های لحظه‌ای (برای جلوگیری از پرداخت دوبل)
+create table public.prize_payments (
+    id uuid default uuid_generate_v4() primary key,
+    game_id uuid references public.active_games(id),
+    winner_id uuid references public.profiles(id),
+    winner_type text check (winner_type in ('line', 'full_house')),
+    amount bigint not null,
+    status text default 'pending' check (status in ('pending', 'paid', 'failed')),
+    paid_at timestamp with time zone,
+    transaction_id uuid references public.transactions(id),
+    created_at timestamp with time zone default now()
+);
+
+-- 3. افزودن ستون‌های جدید به active_games
+alter table public.active_games add column if not exists line_winner_declared boolean default false;
+alter table public.active_games add column if not exists full_house_winner_declared boolean default false;
+alter table public.active_games add column if not exists line_winner_id uuid;
+alter table public.active_games add column if not exists full_house_winner_id uuid;
+alter table public.active_games add column if not exists line_prize_paid boolean default false;
+alter table public.active_games add column if not exists full_house_prize_paid boolean default false;
+-- ============================================
+-- تابع اصلی داور: بررسی و اعلام برنده
+-- ============================================
+
+create or replace function judge_check_winner(
+    p_game_id uuid,
+    p_number_called integer
+)
+returns json
+language plpgsql
+as $$
+declare
+    v_result json;
+    v_line_winners json[];
+    v_full_house_winners json[];
+    v_game_record record;
+    v_room_record record;
+    v_tier_record record;
+    v_line_prize bigint;
+    v_full_house_prize bigint;
+    v_winner_count integer;
+    v_shared_prize bigint;
+begin
+    -- گرفتن اطلاعات بازی
+    select * into v_game_record 
+    from public.active_games 
+    where id = p_game_id and status = 'active';
+    
+    if not found then
+        return json_build_object('success', false, 'error', 'Game not found or not active');
+    end if;
+    
+    -- گرفتن اطلاعات اتاق
+    select * into v_room_record 
+    from public.active_rooms 
+    where id = v_game_record.room_id;
+    
+    -- گرفتن اطلاعات tier (برای محاسبه جایزه)
+    select * into v_tier_record 
+    from public.room_tiers 
+    where id = v_room_record.tier_id;
+    
+    -- محاسبه جایزه کل
+    v_line_prize := (v_room_record.current_cards * v_tier_record.card_price * v_tier_record.line_prize_percentage) / 100;
+    v_full_house_prize := (v_room_record.current_cards * v_tier_record.card_price * v_tier_record.full_house_prize_percentage) / 100;
+    
+    -- ========================================
+    -- 1. بررسی برندگان خطی (اگر قبلاً اعلام نشده)
+    -- ========================================
+    if not v_game_record.line_winner_declared then
+        -- پیدا کردن همه کارت‌هایی که یک ردیف کامل دارند
+        select array_agg(json_build_object(
+            'user_id', gc.user_id,
+            'user_name', p.username,
+            'card_number', gc.card_number,
+            'line_index', line_idx.line_index
+        )) into v_line_winners
+        from public.game_cards_extended gc
+        join public.profiles p on p.id = gc.user_id
+        cross join lateral unnest(gc.line_completed) with ordinality as line_idx(completed, line_index)
+        where gc.game_id = p_game_id
+          and gc.line_completed[line_idx.line_index] = true
+          and not gc.is_winner_line;
+        
+        if array_length(v_line_winners, 1) > 0 then
+            -- چند برنده همزمان خطی
+            v_winner_count := array_length(v_line_winners, 1);
+            v_shared_prize := v_line_prize / v_winner_count;
+            
+            -- ثبت هر برنده خطی
+            for i in 1..v_winner_count loop
+                -- ثبت در تاریخچه
+                insert into public.winners_history (
+                    game_id, room_id, winner_type, winner_user_id, winner_user_name,
+                    card_number, line_index, prize_amount, is_shared, shared_with
+                ) values (
+                    p_game_id, v_room_record.id, 'line',
+                    (v_line_winners[i]->>'user_id')::uuid,
+                    v_line_winners[i]->>'user_name',
+                    (v_line_winners[i]->>'card_number')::integer,
+                    (v_line_winners[i]->>'line_index')::integer,
+                    v_shared_prize,
+                    true, v_winner_count
+                );
+                
+                -- ثبت در جدول پرداخت
+                insert into public.prize_payments (
+                    game_id, winner_id, winner_type, amount, status
+                ) values (
+                    p_game_id, (v_line_winners[i]->>'user_id')::uuid, 'line', v_shared_prize, 'pending'
+                );
+                
+                -- آپدیت کارت به عنوان برنده خطی
+                update public.game_cards_extended
+                set is_winner_line = true
+                where game_id = p_game_id 
+                  and user_id = (v_line_winners[i]->>'user_id')::uuid
+                  and card_number = (v_line_winners[i]->>'card_number')::integer;
+            end loop;
+            
+            -- آپدیت بازی: برنده خطی اعلام شد
+            update public.active_games 
+            set line_winner_declared = true
+            where id = p_game_id;
+            
+            v_result := json_build_object(
+                'success', true,
+                'winner_type', 'line',
+                'winner_count', v_winner_count,
+                'each_prize', v_shared_prize,
+                'winners', v_line_winners
+            );
+            
+            return v_result;
+        end if;
+    end if;
+    
+    -- ========================================
+    -- 2. بررسی برندگان پر (اگر قبلاً اعلام نشده)
+    -- ========================================
+    if not v_game_record.full_house_winner_declared then
+        -- پیدا کردن کارت‌هایی که همه اعدادشان علامت خورده
+        select array_agg(json_build_object(
+            'user_id', gc.user_id,
+            'user_name', p.username,
+            'card_number', gc.card_number
+        )) into v_full_house_winners
+        from public.game_cards_extended gc
+        join public.profiles p on p.id = gc.user_id
+        where gc.game_id = p_game_id
+          and array_length(gc.marked_numbers, 1) >= 15  -- کارت 15 عدد دارد
+          and not gc.is_winner_full;
+        
+        if array_length(v_full_house_winners, 1) > 0 then
+            -- چند برنده همزمان پر
+            v_winner_count := array_length(v_full_house_winners, 1);
+            v_shared_prize := v_full_house_prize / v_winner_count;
+            
+            -- ثبت هر برنده پر
+            for i in 1..v_winner_count loop
+                -- ثبت در تاریخچه
+                insert into public.winners_history (
+                    game_id, room_id, winner_type, winner_user_id, winner_user_name,
+                    card_number, prize_amount, is_shared, shared_with
+                ) values (
+                    p_game_id, v_room_record.id, 'full_house',
+                    (v_full_house_winners[i]->>'user_id')::uuid,
+                    v_full_house_winners[i]->>'user_name',
+                    (v_full_house_winners[i]->>'card_number')::integer,
+                    v_shared_prize,
+                    true, v_winner_count
+                );
+                
+                -- ثبت در جدول پرداخت
+                insert into public.prize_payments (
+                    game_id, winner_id, winner_type, amount, status
+                ) values (
+                    p_game_id, (v_full_house_winners[i]->>'user_id')::uuid, 'full_house', v_shared_prize, 'pending'
+                );
+                
+                -- آپدیت کارت به عنوان برنده پر
+                update public.game_cards_extended
+                set is_winner_full = true
+                where game_id = p_game_id 
+                  and user_id = (v_full_house_winners[i]->>'user_id')::uuid
+                  and card_number = (v_full_house_winners[i]->>'card_number')::integer;
+            end loop;
+            
+            -- آپدیت بازی: برنده پر اعلام شد و بازی تمام شد
+            update public.active_games 
+            set full_house_winner_declared = true,
+                status = 'finished',
+                finished_at = now()
+            where id = p_game_id;
+            
+            -- آپدیت اتاق به finished
+            update public.active_rooms 
+            set status = 'finished', finished_at = now()
+            where id = v_room_record.id;
+            
+            v_result := json_build_object(
+                'success', true,
+                'winner_type', 'full_house',
+                'winner_count', v_winner_count,
+                'each_prize', v_shared_prize,
+                'winners', v_full_house_winners
+            );
+            
+            return v_result;
+        end if;
+    end if;
+    
+    -- هیچ برنده‌ای یافت نشد
+    return json_build_object('success', false, 'message', 'No winner yet');
+end;
+$$;
+
+-- ============================================
+-- تابع تسویه حساب خودکار به حساب کاربران
+-- ============================================
+
+create or replace function auto_settle_prizes(
+    p_game_id uuid
+)
+returns json
+language plpgsql
+as $$
+declare
+    v_payment record;
+    v_balance_updated bigint;
+    v_transaction_id uuid;
+    v_result json;
+begin
+    -- پرداخت همه جایزه‌های pending این بازی
+    for v_payment in 
+        select * from public.prize_payments 
+        where game_id = p_game_id and status = 'pending'
+    loop
+        -- ثبت تراکنش
+        insert into public.transactions (
+            user_id, type, amount, status, reference
+        ) values (
+            v_payment.winner_id,
+            'win',
+            v_payment.amount,
+            'completed',
+            p_game_id::text
+        ) returning id into v_transaction_id;
+        
+        -- افزایش موجودی کاربر
+        update public.profiles
+        set balance = balance + v_payment.amount
+        where id = v_payment.winner_id
+        returning balance into v_balance_updated;
+        
+        -- آپدیت وضعیت پرداخت
+        update public.prize_payments
+        set status = 'paid',
+            paid_at = now(),
+            transaction_id = v_transaction_id
+        where id = v_payment.id;
+        
+        -- ثبت در لاگ
+        raise notice 'پرداخت % تومان به کاربر % انجام شد', v_payment.amount, v_payment.winner_id;
+    end loop;
+    
+    -- جمع‌آوری آمار پرداخت
+    select json_agg(row_to_json(t)) into v_result
+    from (
+        select winner_id, winner_type, amount, status, paid_at
+        from public.prize_payments
+        where game_id = p_game_id and status = 'paid'
+    ) t;
+    
+    return json_build_object(
+        'success', true,
+        'payments', coalesce(v_result, '[]'::json),
+        'message', 'All prizes settled'
+    );
+end;
+$$;
+
