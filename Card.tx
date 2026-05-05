@@ -6,8 +6,11 @@ create table dobna_cards (
     row3 integer[] not null,
     created_at timestamp with time zone default now()
 );
-
--- درج 60 کارت استاندارد (اعداد واقعی بر اساس قوانین دوبنا 90 توپی)
+___
+درج ۱۰۰ کارت ۹۰ توپی بر اساس قوانین دوبنا|اعداد ۱ تا ۹۰|کارت شماره ۱ تا ۱۰۰ 
+کارت‌های شماره ۱ تا ۳۰ برای دوئل
+کارت های شماره ۱ تا ۱۰۰ برای چالش 
+کارت های شماره ۱ تا ۳۰ برای گروه 
 insert into public.dobna_cards (card_number, row1, row2, row3) values
 -- کارت شماره 1
 (1, 
