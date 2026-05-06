@@ -16,14 +16,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.bingogame"
+      "bundleIdentifier": "com.yourcompany.dobna"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
-      "package": "com.yourcompany.bingogame"
+      "package": "com.yourcompany.dobna"
     },
     "web": {
       "favicon": "./src/assets/images/favicon.png"
@@ -58,14 +58,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.bingogame"
+      "bundleIdentifier": "com.yourcompany.dobna"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
-      "package": "com.yourcompany.bingogame"
+      "package": "com.yourcompany.dobna"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
