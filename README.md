@@ -343,6 +343,91 @@ dobna/                    📁 روت پروژه
 ├── package.json
 ├── tsconfig.json
 └── .env
+src/
+│
+├── app/                        📱 صفحات و روتینگ (Expo Router)
+│   ├── (auth)/                 🔐 صفحات احراز هویت
+│   │   ├── login.tsx
+│   │   ├── register.tsx
+│   │   └── _layout.tsx
+│   ├── (tabs)/                 📱 صفحات اصلی با تب
+│   │   ├── index.tsx           # لابی
+│   │   ├── rooms.tsx           # لیست اتاق‌ها
+│   │   ├── profile.tsx         # پروفایل
+│   │   ├── chat.tsx            # چت عمومی
+│   │   ├── transfer.tsx        # انتقال اعتبار
+│   │   └── _layout.tsx
+│   ├── game/                   🎮 صفحه بازی
+│   │   └── [roomId].tsx
+│   └── _layout.tsx
+│
+├── components/                 🧩 کامپوننت‌های UI
+│   ├── BingoCard.tsx
+│   ├── BingoCardWithBlink.tsx
+│   ├── RoomCard.tsx
+│   ├── ChatMessage.tsx
+│   ├── BalanceCard.tsx
+│   ├── WinnerModal.tsx
+│   ├── CountdownTimer.tsx
+│   └── UI/
+│       ├── Button.tsx
+│       ├── Input.tsx
+│       └── LoadingSpinner.tsx
+│
+├── constants/                  📌 ثابت‌های سراسری
+│   ├── colors.ts
+│   ├── roomTiers.ts            # ۵۰۰۰، ۱۰۰۰۰، ۲۰۰۰۰، ۵۰۰۰۰، ۱۰۰۰۰۰
+│   ├── config.ts
+│   └── images.ts
+│
+├── hooks/                      🪝 هوک‌های سفارشی
+│   ├── useAuth.ts
+│   ├── useGame.ts
+│   ├── useRealtime.ts
+│   ├── useVoiceAnnouncer.ts
+│   └── useSound.ts
+│
+├── lib/                        📚 کتابخانه‌ها و سرویس‌های اصلی
+│   ├── supabase.ts
+│   ├── auth.ts
+│   ├── gameLogic.ts
+│   ├── voiceAnnouncer.ts
+│   ├── judgeClient.ts
+│   ├── standardCards.ts        # ۳۰ کارت ثابت
+│   ├── cardDistribution.ts
+│   └── gameStarter.ts
+│
+├── services/                   🌐 سرویس‌های API و بک‌اند
+│   ├── roomService.ts
+│   ├── gameService.ts
+│   ├── transactionService.ts   # واریز، برداشت، انتقال داخلی
+│   ├── chatService.ts
+│   └── zarinpalService.ts      # اتصال به زرین‌پال
+│
+├── stores/                     📦 مدیریت state (Zustand)
+│   ├── authStore.ts
+│   ├── gameStore.ts
+│   ├── chatStore.ts
+│   └── roomStore.ts
+│
+├── utils/                      🔧 توابع کمکی
+│   ├── formatters.ts           # فرمت اعداد، تاریخ، قیمت
+│   ├── validators.ts           # اعتبارسنجی ورودی‌ها
+│   ├── helpers.ts
+│   └── soundManager.ts
+│
+├── types/                      📝 تعاریف TypeScript
+│   ├── game.types.ts
+│   ├── user.types.ts
+│   ├── room.types.ts
+│   └── api.types.ts
+│
+├── styles/                     🎨 استایل‌های سراسری
+│   ├── global.css
+│   └── typography.ts
+│
+└── assets/                     🖼️ (این پوشه در روت است، نه داخل src)
+
 ```
 
 
