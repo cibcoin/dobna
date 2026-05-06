@@ -39,3 +39,6 @@ expo install expo-speech expo-av
 npm install @supabase/supabase-js expo-router expo-speech expo-secure-store zustand react-native-confetti-cannon
 
 npm install --save-dev babel-plugin-module-resolver
+npx create-expo-app dobna --template
+
+npm install --save-dev babel-plugin-module-resolver @types/react
