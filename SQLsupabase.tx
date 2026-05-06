@@ -1196,3 +1196,192 @@ begin
 end;
 $$;
 
+-- ============================================
+-- جداول مدیریت مالی (تکمیل کننده جداول قبل)
+-- ============================================
+
+-- 1. جدول تراکنش‌های مالی (اصلی)
+create table public.transactions (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    type text not null check (type in (
+        'deposit',           -- واریز از طریق درگاه
+        'withdraw',          -- برداشت به حساب بانکی
+        'transfer_out',      -- انتقال به کاربر دیگر (کاهش)
+        'transfer_in',       -- دریافت از کاربر دیگر (افزایش)
+        'game_entry',        -- ورود به بازی (کاهش)
+        'game_win_line',     -- برد خطی
+        'game_win_full',     -- برد پر
+        'commission'         -- کمیسیون دریافتی
+    )),
+    amount bigint not null,  -- مبلغ به تومان
+    balance_after bigint not null,  -- موجودی بعد از تراکنش
+    status text default 'pending' check (status in ('pending', 'completed', 'failed', 'cancelled')),
+    
+    -- فیلدهای مرتبط با تراکنش
+    reference_id text,        -- شماره پیگیری/ارجاع
+    from_user_id uuid references public.profiles(id),  -- برای انتقال داخلی
+    to_user_id uuid references public.profiles(id),    -- برای انتقال داخلی
+    
+    -- فیلدهای مرتبط با بازی
+    game_id uuid references public.active_games(id),
+    room_id uuid references public.active_rooms(id),
+    
+    -- فیلدهای مرتبط با درگاه
+    payment_authority text,   -- کد Authority زرین‌پال
+    payment_ref_id text,      -- RefID زرین‌پال
+    
+    -- متادیتا
+    description text,
+    metadata jsonb,
+    created_at timestamp with time zone default now(),
+    completed_at timestamp with time zone
+);
+
+-- 2. جدول محدودیت‌های روزانه انتقال
+create table public.daily_transfer_limits (
+    user_id uuid references public.profiles(id) primary key,
+    transferred_today bigint default 0,  -- مبلغ انتقال داده شده امروز
+    last_reset_date date default current_date,
+    updated_at timestamp with time zone default now()
+);
+
+-- 3. جدول درخواست‌های برداشت
+create table public.withdraw_requests (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    amount bigint not null,
+    bank_name text not null,
+    card_number text not null,
+    account_holder text not null,  -- نام صاحب حساب
+    iban text,  -- شبا (اختیاری)
+    status text default 'pending' check (status in ('pending', 'processing', 'completed', 'rejected')),
+    admin_note text,
+    transaction_id uuid references public.transactions(id),
+    created_at timestamp with time zone default now(),
+    processed_at timestamp with time zone,
+    processed_by uuid references auth.users
+);
+
+-- 4. جدول لاگ انتقال‌های داخلی (برای پیگیری)
+create table public.internal_transfers_log (
+    id uuid default uuid_generate_v4() primary key,
+    from_user_id uuid references public.profiles(id),
+    to_user_id uuid references public.profiles(id),
+    amount bigint not null,
+    from_balance_before bigint,
+    from_balance_after bigint,
+    to_balance_before bigint,
+    to_balance_after bigint,
+    description text,
+    created_at timestamp with time zone default now()
+);
+
+-- 5. جدول تنظیمات سیستم
+create table public.system_settings (
+    key text primary key,
+    value jsonb,
+    updated_at timestamp with time zone default now()
+);
+
+-- درج تنظیمات اولیه
+insert into public.system_settings (key, value) values
+('transfer_limits', '{"min_amount": 10000, "max_amount": 1000000, "daily_limit": 10000000}'::jsonb),
+('game_commission', '{"platform_percent": 10, "line_percent": 9, "full_percent": 81}'::jsonb);
+
+-- ============================================
+-- ایندکس‌ها برای بهبود عملکرد
+-- ============================================
+
+create index idx_transactions_user_id on public.transactions(user_id);
+create index idx_transactions_created_at on public.transactions(created_at);
+create index idx_transactions_status on public.transactions(status);
+create index idx_transactions_type on public.transactions(type);
+create index idx_withdraw_requests_user_id on public.withdraw_requests(user_id);
+create index idx_withdraw_requests_status on public.withdraw_requests(status);
+create index idx_internal_transfers_log_from on public.internal_transfers_log(from_user_id);
+create index idx_internal_transfers_log_to on public.internal_transfers_log(to_user_id);
+
+-- ============================================
+-- توابع کمکی
+-- ============================================
+
+-- تابع بروزرسانی محدودیت روزانه
+create or replace function update_daily_transfer_limit(
+    p_user_id uuid,
+    p_amount bigint
+)
+returns void
+language plpgsql
+as $$
+begin
+    insert into public.daily_transfer_limits (user_id, transferred_today, last_reset_date)
+    values (p_user_id, p_amount, current_date)
+    on conflict (user_id) do update
+    set transferred_today = 
+        case 
+            when daily_transfer_limits.last_reset_date < current_date then p_amount
+            else daily_transfer_limits.transferred_today + p_amount
+        end,
+        last_reset_date = 
+        case 
+            when daily_transfer_limits.last_reset_date < current_date then current_date
+            else daily_transfer_limits.last_reset_date
+        end,
+        updated_at = now();
+end;
+$$;
+
+-- تابع بررسی محدودیت انتقال
+create or replace function check_transfer_limits(
+    p_user_id uuid,
+    p_amount bigint
+)
+returns json
+language plpgsql
+as $$
+declare
+    v_settings jsonb;
+    v_min_amount bigint;
+    v_max_amount bigint;
+    v_daily_limit bigint;
+    v_transferred_today bigint;
+    v_today date;
+begin
+    -- دریافت تنظیمات
+    select value into v_settings from public.system_settings where key = 'transfer_limits';
+    
+    v_min_amount := (v_settings->>'min_amount')::bigint;
+    v_max_amount := (v_settings->>'max_amount')::bigint;
+    v_daily_limit := (v_settings->>'daily_limit')::bigint;
+    
+    -- بررسی حداقل و حداکثر مبلغ
+    if p_amount < v_min_amount then
+        return json_build_object('allowed', false, 'reason', 'amount_below_min', 'min', v_min_amount);
+    end if;
+    
+    if p_amount > v_max_amount then
+        return json_build_object('allowed', false, 'reason', 'amount_above_max', 'max', v_max_amount);
+    end if;
+    
+    -- بررسی سقف روزانه
+    v_today := current_date;
+    
+    select transferred_today into v_transferred_today
+    from public.daily_transfer_limits
+    where user_id = p_user_id and last_reset_date = v_today;
+    
+    v_transferred_today := coalesce(v_transferred_today, 0);
+    
+    if v_transferred_today + p_amount > v_daily_limit then
+        return json_build_object(
+            'allowed', false, 
+            'reason', 'daily_limit_exceeded',
+            'remaining', v_daily_limit - v_transferred_today,
+            'daily_limit', v_daily_limit
+        );
+    end if;
+    
+    return json_build_object('allowed', true);
+end;
+$$;
