@@ -1385,3 +1385,103 @@ begin
     return json_build_object('allowed', true);
 end;
 $$;
+-- ============================================
+-- تابع پردازش انتقال داخلی (سمت سرور)
+-- این تابع به صورت اتمیک اجرا می‌شود
+-- ============================================
+
+create or replace function process_internal_transfer(
+    p_from_user_id uuid,
+    p_to_user_id uuid,
+    p_amount bigint,
+    p_description text default 'انتقال اعتبار'
+)
+returns json
+language plpgsql
+as $$
+declare
+    v_from_balance bigint;
+    v_to_balance bigint;
+    v_from_balance_after bigint;
+    v_to_balance_after bigint;
+    v_transaction_id uuid;
+    v_limits_check json;
+begin
+    -- بررسی محدودیت‌های انتقال
+    select check_transfer_limits(p_from_user_id, p_amount) into v_limits_check;
+    
+    if not (v_limits_check->>'allowed')::boolean then
+        return json_build_object('success', false, 'error', v_limits_check->>'reason');
+    end if;
+    
+    -- قفل کردن ردیف‌ها برای جلوگیری از همزمانی (Row Lock)
+    select balance into v_from_balance
+    from public.profiles
+    where id = p_from_user_id
+    for update;
+    
+    select balance into v_to_balance
+    from public.profiles
+    where id = p_to_user_id
+    for update;
+    
+    -- بررسی موجودی کافی
+    if v_from_balance < p_amount then
+        return json_build_object('success', false, 'error', 'insufficient_balance');
+    end if;
+    
+    -- محاسبه موجودی جدید
+    v_from_balance_after := v_from_balance - p_amount;
+    v_to_balance_after := v_to_balance + p_amount;
+    
+    -- بروزرسانی موجودی کاربر فرستنده
+    update public.profiles
+    set balance = v_from_balance_after
+    where id = p_from_user_id;
+    
+    -- بروزرسانی موجودی کاربر گیرنده
+    update public.profiles
+    set balance = v_to_balance_after
+    where id = p_to_user_id;
+    
+    -- ثبت تراکنش خروج
+    insert into public.transactions (
+        user_id, type, amount, balance_after, status,
+        from_user_id, to_user_id, description
+    ) values (
+        p_from_user_id, 'transfer_out', p_amount, v_from_balance_after, 'completed',
+        p_from_user_id, p_to_user_id, p_description
+    );
+    
+    -- ثبت تراکنش ورود
+    insert into public.transactions (
+        user_id, type, amount, balance_after, status,
+        from_user_id, to_user_id, description
+    ) values (
+        p_to_user_id, 'transfer_in', p_amount, v_to_balance_after, 'completed',
+        p_from_user_id, p_to_user_id, p_description
+    );
+    
+    -- ثبت در لاگ انتقالات
+    insert into public.internal_transfers_log (
+        from_user_id, to_user_id, amount,
+        from_balance_before, from_balance_after,
+        to_balance_before, to_balance_after,
+        description
+    ) values (
+        p_from_user_id, p_to_user_id, p_amount,
+        v_from_balance, v_from_balance_after,
+        v_to_balance, v_to_balance_after,
+        p_description
+    );
+    
+    -- بروزرسانی محدودیت روزانه
+    perform update_daily_transfer_limit(p_from_user_id, p_amount);
+    
+    return json_build_object(
+        'success', true,
+        'from_balance', v_from_balance_after,
+        'to_balance', v_to_balance_after
+    );
+end;
+$$;
