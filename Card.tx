@@ -1,4 +1,4 @@
--- ایجاد جدول کارت‌های استاندارد (مرجع ثابت)
+-- ایجاد جدول کارت‌های استاندارد دوبنا (مرجع ثابت)
 create table dobna_cards (
     card_number integer primary key,  -- 1 تا 100
     row1 integer[] not null,  -- 9 عدد (0 نشان‌دهنده خالی)
