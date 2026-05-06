@@ -36,3 +36,4 @@ npx expo start --web
 expo install expo-speech expo-av
 
 # برای وب، نیاز به نصب خاصی نیست (از Web Speech API استفاده می‌کند)
+npm install @supabase/supabase-js expo-router expo-speech expo-secure-store zustand react-native-confetti-cannon
