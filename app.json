@@ -41,8 +41,8 @@
 }
 {
   "expo": {
-    "name": "Bingo Game",
-    "slug": "bingo-game",
+    "name": "Dobna",
+    "slug": "dobna",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
