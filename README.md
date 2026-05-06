@@ -318,6 +318,31 @@ dobna/
 ├── .gitignore
 ├── README.md
 └── index.ts                    # نقطه ورود اصلی (فقط import از src)
+
+dobna/                    📁 روت پروژه
+│
+├── assets/                    📁 منابع استاتیک
+├── src/                       📁 کدهای اصلی
+│   └── app/                   📁 نقطه ورود اینجاست! (نه app.js در روت)
+│       ├── _layout.tsx        🔧 لایه اصلی (رکورد)
+│       ├── index.tsx          🏠 صفحه اصلی (لابی)
+│       ├── (auth)/            🔐 گروه صفحات احراز هویت
+│       │   ├── _layout.tsx
+│       │   ├── login.tsx
+│       │   └── register.tsx
+│       ├── (tabs)/            📱 گروه صفحات با تب
+│       │   ├── _layout.tsx
+│       │   ├── index.tsx      # لابی
+│       │   ├── rooms.tsx      # لیست اتاق‌ها
+│       │   ├── profile.tsx    # پروفایل
+│       │   └── chat.tsx       # چت عمومی
+│       └── game/              🎮 صفحه بازی
+│           └── [roomId].tsx   # صفحه پویا با پارامتر roomId
+│
+├── app.json                   📄 تنظیمات Expo (اجباری در روت)
+├── package.json
+├── tsconfig.json
+└── .env
 ```
 
 
