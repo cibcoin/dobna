@@ -51,3 +51,14 @@ eas login
 
 # دپلوی API Routes
 eas deploy
+# نصب وابستگی‌های اضافی
+npx expo install @react-native-async-storage/async-storage react-native-url-polyfill
+
+# اجرای پروژه
+npx expo start
+
+# بعد از باز شدن صفحه، یکی از گزینه‌ها را انتخاب کنید:
+# - برای اندروید: کلید 'a' را بزنید
+# - برای iOS: کلید 'i' را بزنید  
+# - برای وب: کلید 'w' را بزنید
+# - یا با گوشی خود کد QR را اسکن کنید
