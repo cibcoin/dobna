@@ -206,7 +206,6 @@ src/
 ├── app.json
 ├── tsconfig.json
 └── .env                       # متغیرهای محیطی
-```
 bingo-game/
 ├── src/                          📁 تمام کدهای اصلی اینجاست
 │   ├── app/                      📁 صفحات اصلی (با Expo Router)
@@ -318,7 +317,8 @@ bingo-game/
 ├── .gitignore
 ├── README.md
 └── index.ts                    # نقطه ورود اصلی (فقط import از src)
----
+```
+
 
 ```
 
