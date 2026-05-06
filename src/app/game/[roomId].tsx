@@ -311,3 +311,79 @@ const startGameWithStandardCards = async (players: PlayerInfo[]) => {
     </SafeAreaView>
   );
 }
+// app/game/[roomId].tsx (بخش اصلی با داور)
+
+import { JudgeClient } from '../../lib/judgeClient';
+import ConfettiCannon from 'react-native-confetti-cannon';
+
+export default function GameScreen() {
+  const [judge, setJudge] = useState<JudgeClient | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [winnerMessage, setWinnerMessage] = useState('');
+  
+  useEffect(() => {
+    const gameId = roomId as string;
+    const judgeClient = new JudgeClient(gameId);
+    
+    // شروع گوش دادن به اعلام برنده
+    judgeClient.startListening((winners, type) => {
+      // نمایش انیمیشن برنده شدن
+      setShowConfetti(true);
+      
+      const message = type === 'line' 
+        ? `🎉 برنده خطی: ${winners.map(w => w.userName).join(', ')} هر کدام ${winners[0].prizeAmount.toLocaleString()} تومان`
+        : `🏆 برنده اصلی: ${winners.map(w => w.userName).join(', ')} هر کدام ${winners[0].prizeAmount.toLocaleString()} تومان`;
+      
+      setWinnerMessage(message);
+      
+      // بعد از 5 ثانیه انیمیشن را مخفی کن
+      setTimeout(() => setShowConfetti(false), 5000);
+    });
+    
+    setJudge(judgeClient);
+    
+    return () => {
+      judgeClient.stopListening();
+    };
+  }, []);
+  
+  const handleNumberCalled = async (number: number) => {
+    // اعلام عدد به داور
+    const result = await judge?.callNumber(number);
+    
+    if (result?.success) {
+      // بازی تمام شد (برنده پر پیدا شد)
+      if (result.winner_type === 'full_house') {
+        // توقف اعلام اعداد جدید
+        stopGame();
+      }
+    }
+  };
+  
+  return (
+    <View className="flex-1">
+      {/* انیمیشن کنفتی */}
+      {showConfetti && (
+        <ConfettiCannon
+          count={200}
+          origin={{ x: -10, y: 0 }}
+          fallSpeed={3000}
+          fadeOut={true}
+          autoStart={true}
+        />
+      )}
+      
+      {/* پیام برنده */}
+      {winnerMessage !== '' && (
+        <View className="absolute top-20 left-0 right-0 bg-yellow-500 p-4 rounded-lg mx-4 z-50">
+          <Text className="text-black text-center font-bold text-lg">
+            {winnerMessage}
+          </Text>
+        </View>
+      )}
+      
+      {/* بقیه صفحه بازی */}
+      {/* ... */}
+    </View>
+  );
+}
