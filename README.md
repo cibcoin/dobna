@@ -207,7 +207,117 @@ src/
 ├── tsconfig.json
 └── .env                       # متغیرهای محیطی
 ```
-
+bingo-game/
+├── src/                          📁 تمام کدهای اصلی اینجاست
+│   ├── app/                      📁 صفحات اصلی (با Expo Router)
+│   │   ├── (auth)/               🔐 صفحات احراز هویت
+│   │   │   ├── login.tsx
+│   │   │   ├── register.tsx
+│   │   │   └── _layout.tsx
+│   │   ├── (tabs)/               📱 صفحات اصلی با تب
+│   │   │   ├── index.tsx         # لابی اصلی
+│   │   │   ├── rooms.tsx         # لیست اتاق‌ها
+│   │   │   ├── profile.tsx       # پروفایل کاربر
+│   │   │   ├── chat.tsx          # چت عمومی
+│   │   │   └── _layout.tsx
+│   │   ├── game/                 🎮 صفحه بازی
+│   │   │   └── [roomId].tsx
+│   │   └── _layout.tsx           # روت اصلی
+│   │
+│   ├── components/               🧩 کامپوننت‌های قابل استفاده مجدد
+│   │   ├── BingoCard.tsx
+│   │   ├── BingoCardWithBlink.tsx
+│   │   ├── RoomCard.tsx
+│   │   ├── ChatMessage.tsx
+│   │   ├── BalanceCard.tsx
+│   │   ├── WinnerModal.tsx
+│   │   ├── CountdownTimer.tsx
+│   │   └── UI/
+│   │       ├── Button.tsx
+│   │       ├── Input.tsx
+│   │       └── LoadingSpinner.tsx
+│   │
+│   ├── lib/                      📚 کتابخانه‌ها و سرویس‌های اصلی
+│   │   ├── supabase.ts           # کلاینت Supabase
+│   │   ├── auth.ts               # توابع احراز هویت
+│   │   ├── gameLogic.ts          # منطق بازی (چک کردن برنده و...)
+│   │   ├── voiceAnnouncer.ts     # سیستم صدای گوینده
+│   │   ├── judgeClient.ts        # کلاینت داور
+│   │   ├── standardCards.ts      # کارت‌های استاندارد (اعداد ثابت)
+│   │   ├── cardDistribution.ts   # توزیع کارت بین بازیکنان
+│   │   └── gameStarter.ts        # شروع بازی
+│   │
+│   ├── hooks/                    🪝 هوک‌های سفارشی React
+│   │   ├── useAuth.ts
+│   │   ├── useGame.ts
+│   │   ├── useRealtime.ts
+│   │   ├── useVoiceAnnouncer.ts
+│   │   └── useSound.ts
+│   │
+│   ├── stores/                   📦 مدیریت state (Zustand)
+│   │   ├── authStore.ts
+│   │   ├── gameStore.ts
+│   │   ├── chatStore.ts
+│   │   └── roomStore.ts
+│   │
+│   ├── constants/               📌 ثابت‌های سراسری
+│   │   ├── colors.ts
+│   │   ├── roomTiers.ts         # سطوح اتاق‌ها (۵۰۰۰، ۱۰۰۰۰، ...)
+│   │   ├── config.ts
+│   │   └── images.ts             # مسیرهای تصاویر اسکناس
+│   │
+│   ├── utils/                   🔧 توابع کمکی
+│   │   ├── formatters.ts        # فرمت کردن اعداد و تاریخ
+│   │   ├── validators.ts        # توابع اعتبارسنجی
+│   │   ├── helpers.ts
+│   │   └── soundManager.ts      # مدیریت صداها
+│   │
+│   ├── types/                   📝 تعریف انواع TypeScript
+│   │   ├── game.types.ts
+│   │   ├── user.types.ts
+│   │   ├── room.types.ts
+│   │   └── api.types.ts
+│   │
+│   ├── services/               🌐 سرویس‌های ارتباط با API
+│   │   ├── roomService.ts
+│   │   ├── gameService.ts
+│   │   ├── transactionService.ts
+│   │   └── chatService.ts
+│   │
+│   ├── assets/                 🖼️ فایل‌های استاتیک
+│   │   ├── images/
+│   │   │   ├── notes/          # تصاویر اسکناس‌ها
+│   │   │   │   ├── 5000.png
+│   │   │   │   ├── 10000.png
+│   │   │   │   ├── 20000.png
+│   │   │   │   ├── 50000.png
+│   │   │   │   └── 100000.png
+│   │   │   ├── avatars/
+│   │   │   └── icons/
+│   │   ├── fonts/
+│   │   └── sounds/             # فایل‌های صوتی (اختیاری)
+│   │       ├── number_fa.mp3
+│   │       └── winner.mp3
+│   │
+│   └── styles/                 🎨 استایل‌های سراسری
+│       ├── global.css
+│       └── tailwind.config.js
+│
+├── scripts/                    📜 اسکریپت‌های ابزار (داخل روت پروژه)
+│   ├── setup-db.js             # اسکریپت راه‌اندازی دیتابیس
+│   ├── seed-cards.js           # پر کردن کارت‌های استاندارد
+│   └── deploy.sh
+│
+├── app.json                    # تنظیمات Expo
+├── package.json
+├── tsconfig.json
+├── tailwind.config.js          # تنظیمات TailwindCSS
+├── babel.config.js
+├── .env                        # متغیرهای محیطی
+├── .env.example
+├── .gitignore
+├── README.md
+└── index.ts                    # نقطه ورود اصلی (فقط import از src)
 ---
 
 ```
