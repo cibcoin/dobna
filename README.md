@@ -206,7 +206,8 @@ src/
 ├── app.json
 ├── tsconfig.json
 └── .env                       # متغیرهای محیطی
-bingo-game/
+
+dobna/
 ├── src/                          📁 تمام کدهای اصلی اینجاست
 │   ├── app/                      📁 صفحات اصلی (با Expo Router)
 │   │   ├── (auth)/               🔐 صفحات احراز هویت
