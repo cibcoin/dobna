@@ -1,0 +1,21 @@
+{
+  "app_name": "Dobna Game",
+  "welcome": "Welcome",
+  "loading": "Loading...",
+  "save": "Save",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "back": "Back",
+  "close": "Close",
+  "yes": "Yes",
+  "no": "No",
+  "balance": "Balance",
+  "deposit": "Deposit",
+  "withdraw": "Withdraw",
+  "transfer": "Transfer",
+  "profile": "Profile",
+  "settings": "Settings",
+  "language": "Language",
+  "persian": "Persian",
+  "english": "English"
+}
