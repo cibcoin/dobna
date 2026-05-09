@@ -1,0 +1,17 @@
+{
+  "game_title": "بازی دوبنا",
+  "waiting_for_players": "در انتظار بازیکنان...",
+  "game_starts_in": "شروع بازی در",
+  "seconds": "ثانیه",
+  "your_cards": "کارت‌های شما",
+  "other_players": "سایر بازیکنان",
+  "current_number": "عدد فعلی",
+  "line_winner": "برنده خطی",
+  "full_house_winner": "برنده اصلی",
+  "congratulations": "تبریک!",
+  "you_won_line": "شما برنده خطی شدید!",
+  "you_won_full": "شما برنده اصلی شدید!",
+  "prize_amount": "مبلغ جایزه",
+  "game_finished": "بازی تمام شد",
+  "back_to_lobby": "بازگشت به لابی"
+}
