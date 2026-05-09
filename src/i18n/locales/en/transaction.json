@@ -1,0 +1,17 @@
+{
+  "transfer_title": "Transfer Credit",
+  "recipient_username": "Recipient Username",
+  "amount": "Amount (Toman)",
+  "description": "Description",
+  "min_amount": "Minimum Amount",
+  "max_amount": "Maximum Amount",
+  "daily_limit": "Daily Limit",
+  "remaining_today": "Remaining Today",
+  "transfer_success": "Transfer Successful",
+  "transfer_failed": "Transfer Failed",
+  "insufficient_balance": "Insufficient Balance",
+  "user_not_found": "User Not Found",
+  "deposit_title": "Deposit",
+  "deposit_amount": "Deposit Amount",
+  "pay": "Pay"
+}
