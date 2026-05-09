@@ -1,0 +1,21 @@
+{
+  "app_name": "بازی دوبنا",
+  "welcome": "خوش آمدید",
+  "loading": "در حال بارگذاری...",
+  "save": "ذخیره",
+  "cancel": "انصراف",
+  "confirm": "تأیید",
+  "back": "بازگشت",
+  "close": "بستن",
+  "yes": "بله",
+  "no": "خیر",
+  "balance": "موجودی",
+  "deposit": "واریز",
+  "withdraw": "برداشت",
+  "transfer": "انتقال",
+  "profile": "پروفایل",
+  "settings": "تنظیمات",
+  "language": "زبان",
+  "persian": "فارسی",
+  "english": "انگلیسی"
+}
