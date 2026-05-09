@@ -1,0 +1,17 @@
+{
+  "transfer_title": "انتقال اعتبار",
+  "recipient_username": "نام کاربری گیرنده",
+  "amount": "مبلغ (تومان)",
+  "description": "توضیحات",
+  "min_amount": "حداقل مبلغ",
+  "max_amount": "حداکثر مبلغ",
+  "daily_limit": "سقف روزانه",
+  "remaining_today": "باقی‌مانده امروز",
+  "transfer_success": "انتقال موفق",
+  "transfer_failed": "انتقال ناموفق",
+  "insufficient_balance": "موجودی کافی نیست",
+  "user_not_found": "کاربر یافت نشد",
+  "deposit_title": "شارژ حساب",
+  "deposit_amount": "مبلغ شارژ",
+  "pay": "پرداخت"
+}
