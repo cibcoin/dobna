@@ -1,0 +1,17 @@
+{
+  "game_title": "Dobna Game",
+  "waiting_for_players": "Waiting for players...",
+  "game_starts_in": "Game starts in",
+  "seconds": "seconds",
+  "your_cards": "Your Cards",
+  "other_players": "Other Players",
+  "current_number": "Current Number",
+  "line_winner": "Line Winner",
+  "full_house_winner": "Full House Winner",
+  "congratulations": "Congratulations!",
+  "you_won_line": "You won the line!",
+  "you_won_full": "You won the full house!",
+  "prize_amount": "Prize Amount",
+  "game_finished": "Game Finished",
+  "back_to_lobby": "Back to Lobby"
+}
