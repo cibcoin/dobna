@@ -62,3 +62,9 @@ npx expo start
 # - برای iOS: کلید 'i' را بزنید  
 # - برای وب: کلید 'w' را بزنید
 # - یا با گوشی خود کد QR را اسکن کنید
+
+# نصب کتابخانه i18n-js
+npm install i18n-js
+
+# نصب types (برای TypeScript)
+npm install --save-dev @types/i18n-js
