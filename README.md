@@ -427,6 +427,49 @@ src/
 │   └── typography.ts
 │
 └── assets/                     🖼️ (این پوشه در روت است، نه داخل src)
+src/
+│
+├── app/                        📱 صفحات و روتینگ
+│   ├── (auth)/
+│   ├── (tabs)/
+│   ├── game/
+│   └── _layout.tsx
+│
+├── components/                 🧩 کامپوننت‌های UI
+│
+├── constants/                  📌 ثابت‌های سراسری
+│
+├── hooks/                      🪝 هوک‌های سفارشی
+│
+├── i18n/                       🌍 بین‌المللی‌سازی (جدید)
+│   ├── index.ts                # تنظیمات اصلی i18n
+│   ├── locales/
+│   │   ├── fa/                 # فارسی
+│   │   │   ├── common.json
+│   │   │   ├── game.json
+│   │   │   ├── room.json
+│   │   │   ├── transaction.json
+│   │   │   └── errors.json
+│   │   └── en/                 # انگلیسی
+│   │       ├── common.json
+│   │       ├── game.json
+│   │       ├── room.json
+│   │       ├── transaction.json
+│   │       └── errors.json
+│   └── hooks/
+│       └── useTranslation.ts   # هوک سفارشی ترجمه
+│
+├── lib/                        📚 کتابخانه‌ها
+│
+├── services/                   🌐 سرویس‌ها
+│
+├── stores/                     📦 مدیریت state
+│
+├── utils/                      🔧 توابع کمکی
+│
+├── types/                      📝 تعاریف TypeScript
+│
+└── styles/                     🎨 استایل‌ها
 
 ```
 
