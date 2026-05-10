@@ -470,9 +470,6 @@ src/
 ├── types/                      📝 تعاریف TypeScript
 │
 └── styles/                     🎨 استایل‌ها
-
-```
-
 src/i18n/
 ├── index.ts                          # تنظیمات اصلی i18n
 ├── locales/
@@ -484,15 +481,37 @@ src/i18n/
 │   │   ├── wallet.json
 │   │   └── errors.json
 │   ├── fa/                           # فارسی
-│   │   └── ... (همان ساختار)
+│   │   ├── common.json
+│   │   ├── game.json
+│   │   ├── lobby.json
+│   │   ├── profile.json
+│   │   ├── wallet.json
+│   │   └── errors.json
 │   ├── ar/                           # عربی
-│   │   └── ... (همان ساختار)
-│   ├── tr/                           # ترکی استانبولی
-│   │   └── ... (همان ساختار)
+│   │   ├── common.json
+│   │   ├── game.json
+│   │   ├── lobby.json
+│   │   ├── profile.json
+│   │   ├── wallet.json
+│   │   └── errors.json
+│   ├── tr/                           # ترکی │   │   ├── common.json
+│   │   ├── game.json
+│   │   ├── lobby.json
+│   │   ├── profile.json
+│   │   ├── wallet.json
+│   │   └── errors.json
 │   └── ru/                           # روسی
-│       └── ... (همان ساختار)
+│   │   ├── common.json
+│   │   ├── game.json
+│   │   ├── lobby.json
+│   │   ├── profile.json
+│   │   ├── wallet.json
+│   │   └── errors.json
 └── hooks/
     └── useTranslation.ts
+```
+
+
 ```
 
 
