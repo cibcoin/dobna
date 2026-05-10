@@ -473,7 +473,26 @@ src/
 
 ```
 
-
+src/i18n/
+├── index.ts                          # تنظیمات اصلی i18n
+├── locales/
+│   ├── en/                           # انگلیسی
+│   │   ├── common.json
+│   │   ├── game.json
+│   │   ├── lobby.json
+│   │   ├── profile.json
+│   │   ├── wallet.json
+│   │   └── errors.json
+│   ├── fa/                           # فارسی
+│   │   └── ... (همان ساختار)
+│   ├── ar/                           # عربی
+│   │   └── ... (همان ساختار)
+│   ├── tr/                           # ترکی استانبولی
+│   │   └── ... (همان ساختار)
+│   └── ru/                           # روسی
+│       └── ... (همان ساختار)
+└── hooks/
+    └── useTranslation.ts
 ```
 
 
