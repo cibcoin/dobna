@@ -847,6 +847,35 @@ src/
 
 
 
+src/
+├── app/
+│   ├── (admin)/                       # پنل مدیریت (مسیر جداگانه)
+│   │   ├── _layout.tsx                # layout با احراز هویت ادمین
+│   │   ├── index.tsx                  # داشبورد اصلی
+│   │   ├── deposits.tsx               # لیست واریزها
+│   │   ├── withdraws.tsx              # لیست برداشتها (نیاز به تأیید)
+│   │   ├── winners.tsx                # لیست برندگان
+│   │   ├── card-stats.tsx             # آمار کارت‌های برنده
+│   │   ├── support.tsx                # تیکت‌های پشتیبانی
+│   │   ├── users.tsx                  # مدیریت کاربران
+│   │   ├── reports.tsx                # گزارشات مالی
+│   │   └── settings.tsx               # تنظیمات سیستم
+│   └── (auth)/
+│   └── (tabs)/
+│
+├── lib/
+│   └── adminAuth.ts                   # بررسی دسترسی ادمین
+│
+└── constants/
+    └── adminEmails.ts                 # لیست ایمیل‌های مدیران
+
+
+
+
+
+
+
+
 ```
 
 
