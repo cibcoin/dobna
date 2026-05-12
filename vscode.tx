@@ -98,3 +98,11 @@ npx expo install expo-image-picker
 
 # برای تبدیل base64
 npm install base64-arraybuffer
+
+# نصب گرادیانت و ناوبری
+npx expo install expo-linear-gradient
+
+# نصب برای مدیریت شماره موبایل
+npx expo install expo-phone-verification
+
+# آپدیت ایکس کد در iOS (در صورت نیاز)
