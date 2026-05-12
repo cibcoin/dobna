@@ -1599,3 +1599,65 @@ with check (
 create policy "Anyone can view avatars"
 on storage.objects for select
 using (bucket_id = 'avatars');
+
+-- ============================================
+-- جداول مدیریتی دوبنا
+-- ============================================
+
+-- 1. جدول درخواست‌های پشتیبانی
+create table public.support_tickets (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    subject text not null,
+    message text not null,
+    status text default 'pending' check (status in ('pending', 'in_progress', 'resolved', 'closed')),
+    admin_response text,
+    resolved_by uuid references public.profiles(id),
+    created_at timestamp with time zone default now(),
+    resolved_at timestamp with time zone
+);
+
+-- 2. جدول لاگ برداشت‌ها (برای کارت به کارت)
+create table public.withdraw_logs (
+    id uuid default uuid_generate_v4() primary key,
+    withdraw_request_id uuid references public.withdraw_requests(id),
+    admin_id uuid references public.profiles(id),
+    transaction_id text,  -- شماره پیگیری کارت به کارت
+    bank_receipt text,    -- تصویر رسید
+    notes text,
+    created_at timestamp with time zone default now()
+);
+
+-- 3. جدول آمار روزانه کارت‌های برنده
+create table public.daily_card_stats (
+    id uuid default uuid_generate_v4() primary key,
+    stat_date date not null,
+    card_number integer not null,
+    win_count integer default 0,
+    win_type text check (win_type in ('line', 'full_house')),
+    total_prize bigint default 0,
+    created_at timestamp with time zone default now(),
+    unique(stat_date, card_number, win_type)
+);
+
+-- 4. تابع بروزرسانی آمار کارت‌های برنده
+create or replace function update_card_win_stats()
+returns trigger
+language plpgsql
+as $$
+begin
+    insert into public.daily_card_stats (stat_date, card_number, win_type, win_count, total_prize)
+    values (current_date, NEW.card_number, NEW.winner_type, 1, NEW.prize_amount)
+    on conflict (stat_date, card_number, win_type) do update
+    set win_count = daily_card_stats.win_count + 1,
+        total_prize = daily_card_stats.total_prize + NEW.prize_amount;
+    
+    return NEW;
+end;
+$$;
+
+-- تریگر برای بروزرسانی خودکار آمار
+create trigger trigger_update_card_stats
+    after insert on public.winners_history
+    for each row
+    execute function update_card_win_stats();
