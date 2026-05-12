@@ -150,3 +150,16 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-end',
     },
 });
+
+// در قسمت دکمه منوی همبرگری، مسیر را به صفحه منو تغییر دهید:
+
+<TouchableOpacity 
+    onPress={() => router.push('/(drawer)')}  // ← تغییر این خط
+    style={styles.menuButton}
+    activeOpacity={0.7}
+>
+    <View style={[styles.hamburgerLine, { backgroundColor: currentColors.text }]} />
+    <View style={[styles.hamburgerLine, { backgroundColor: currentColors.text }]} />
+    <View style={[styles.hamburgerLine, { backgroundColor: currentColors.text }]} />
+    <View style={[styles.hamburgerLineShort, { backgroundColor: currentColors.text }]} />
+</TouchableOpacity>
