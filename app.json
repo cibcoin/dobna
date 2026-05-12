@@ -72,3 +72,21 @@
     }
   }
 }
+{
+  "expo": {
+    "name": "دوبنا",
+    "slug": "dobna",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "assets/fonts/*.ttf",
+      "assets/images/**/*"
+    ],
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.dobna.game"
+    },
+    "ios": {
+      "bundleIdentifier": "com.dobna.game"
+    }
+  }
+}
