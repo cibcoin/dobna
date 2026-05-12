@@ -1,15 +1,28 @@
 {
   "name": "dobna",
-  "main": "expo-router/entry",  // ← این خط مهم است
+  "version": "1.0.0",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:android": "eas build -p android",
+    "build:ios": "eas build -p ios"
   },
   "dependencies": {
     "expo": "~52.0.0",
     "expo-router": "^4.0.0",
-    // ... سایر وابستگی‌ها
+    "@supabase/supabase-js": "^2.39.0",
+    "expo-speech": "~12.0.0",
+    "expo-secure-store": "~13.0.0",
+    "zustand": "^4.4.7",
+    "i18n-js": "^4.3.2",
+    "react-native-confetti-cannon": "^1.5.2"
+  },
+  "devDependencies": {
+    "@types/react": "~18.2.45",
+    "babel-plugin-module-resolver": "^5.0.0",
+    "typescript": "^5.3.3"
   }
 }
