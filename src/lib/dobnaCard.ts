@@ -1,4 +1,4 @@
-export type BingoCardData = {
+export type DobnaCardData = {
   cardNumber: number;
   row1: number[];
   row2: number[];
