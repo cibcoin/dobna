@@ -118,3 +118,5 @@ npx expo install expo-image-picker
 
 # نصب AsyncStorage برای ذخیره تم
 npx expo install @react-native-async-storage/async-storage
+
+https://your-project.supabase.co/functions/v1/bale-webhook
