@@ -106,3 +106,9 @@ npx expo install expo-linear-gradient
 npx expo install expo-phone-verification
 
 # آپدیت ایکس کد در iOS (در صورت نیاز)
+
+# نصب گرادیانت برای افکت‌های زیبا
+npx expo install expo-linear-gradient
+
+# نصب gesture handler برای کشیدن دکمه چت
+npx expo install react-native-gesture-handler
