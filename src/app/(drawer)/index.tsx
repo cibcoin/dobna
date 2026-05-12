@@ -528,3 +528,32 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
 });
+
+// در بخش منو، اضافه کنید:
+
+import { isCurrentUserAdmin } from '../../lib/adminAuth';
+
+// در داخل کامپوننت:
+const [isAdmin, setIsAdmin] = useState(false);
+
+useEffect(() => {
+    checkAdmin();
+}, []);
+
+const checkAdmin = async () => {
+    const admin = await isCurrentUserAdmin();
+    setIsAdmin(admin);
+};
+
+// سپس در منو، اگر ادمین بود، گزینه پنل مدیریت را نشان دهید:
+{isAdmin && (
+    <>
+        <MenuItem 
+            icon="📊"
+            label="پنل مدیریت"
+            onPress={() => router.push('/(admin)')}
+            colors={currentColors}
+        />
+        <View style={[styles.divider, { backgroundColor: currentColors.divider }]} />
+    </>
+)}
