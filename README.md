@@ -739,7 +739,31 @@ src/
 
 
 
-
+src/
+├── components/
+│   ├── lobby/
+│   │   ├── LobbyHeader.tsx          # هدر با آواتار و موجودی
+│   │   ├── RoomCard.tsx             # کارت اتاق با تصویر اسکناس
+│   │   ├── FloatingChatButton.tsx   # دکمه شناور چت
+│   │   └── LobbyFooter.tsx          # فوتر با منوی پایین
+│   ├── chat/
+│   │   ├── ChatDrawer.tsx           # صفحه کشویی چت
+│   │   └── ChatMessage.tsx
+│   └── UI/
+│       ├── Avatar.tsx
+│       └── CustomText.tsx
+├── app/
+│   ├── (tabs)/
+│   │   ├── index.tsx                # صفحه اصلی لابی
+│   │   ├── create-group.tsx         # صفحه ساخت گروه
+│   │   ├── top-groups.tsx           # گروه‌های برتر
+│   │   ├── transfer.tsx             # انتقال اعتبار
+│   │   ├── deposit.tsx              # واریز و برداشت
+│   │   └── settings.tsx             # تنظیمات منو
+│   └── game/
+│       └── [roomId].tsx             # صفحه بازی
+└── stores/
+    └── uiStore.ts                   # مدیریت UI (تم، چت، ...)
 
 
 
