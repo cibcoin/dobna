@@ -122,3 +122,96 @@ export default function LobbyScreen() {
     </ScrollView>
   );
 }
+// src/app/(tabs)/index.tsx
+import React from 'react';
+import {
+    View,
+    Text,
+    ScrollView,
+    TouchableOpacity,
+    Image,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useAuthStore } from '../../stores/authStore';
+import { useTranslation } from '../../i18n/hooks/useTranslation';
+
+const ROOM_TIERS = [
+    { id: 1, name: '۵,۰۰۰ تومانی', price: 5000, prize: '۱۲۱,۵۰۰', color: '#10b981', image: require('../../../assets/images/notes/5000.png') },
+    { id: 2, name: '۱۰,۰۰۰ تومانی', price: 10000, prize: '۲۴۳,۰۰۰', color: '#3b82f6', image: require('../../../assets/images/notes/10000.png') },
+    { id: 3, name: '۲۰,۰۰۰ تومانی', price: 20000, prize: '۴۸۶,۰۰۰', color: '#8b5cf6', image: require('../../../assets/images/notes/20000.png') },
+    { id: 4, name: '۵۰,۰۰۰ تومانی', price: 50000, prize: '۱,۲۱۵,۰۰۰', color: '#f59e0b', image: require('../../../assets/images/notes/50000.png') },
+    { id: 5, name: '۱۰۰,۰۰۰ تومانی', price: 100000, prize: '۲,۴۳۰,۰۰۰', color: '#ef4444', image: require('../../../assets/images/notes/100000.png') },
+];
+
+export default function LobbyScreen() {
+    const { t } = useTranslation();
+    const { user, balance } = useAuthStore();
+
+    return (
+        <LinearGradient
+            colors={['#0f0c29', '#302b63', '#24243e']}
+            className="flex-1"
+        >
+            <ScrollView className="flex-1 px-4 pt-6">
+                {/* هدر با موجودی */}
+                <View className="flex-row justify-between items-center mb-6">
+                    <View>
+                        <Text className="text-gray-400 text-sm">{t('welcome', {}, 'common')}</Text>
+                        <Text className="text-white text-xl font-bold">{user?.username}</Text>
+                    </View>
+                    <View className="bg-gray-800 rounded-xl px-4 py-2">
+                        <Text className="text-gray-400 text-xs">{t('balance', {}, 'common')}</Text>
+                        <Text className="text-yellow-500 text-lg font-bold font-orbitron">
+                            {balance?.toLocaleString()} {t('toman', {}, 'common')}
+                        </Text>
+                    </View>
+                </View>
+
+                {/* کارت‌های اتاق‌ها */}
+                <Text className="text-white text-lg font-bold mb-4">{t('public_rooms', {}, 'room')}</Text>
+                
+                {ROOM_TIERS.map((tier) => (
+                    <TouchableOpacity
+                        key={tier.id}
+                        className="bg-gray-800/80 rounded-2xl p-4 mb-4 flex-row items-center"
+                        activeOpacity={0.7}
+                    >
+                        <Image
+                            source={tier.image}
+                            className="w-16 h-10"
+                            resizeMode="contain"
+                        />
+                        <View className="flex-1 ml-4">
+                            <Text className="text-white text-lg font-bold">{tier.name}</Text>
+                            <Text className="text-gray-400 text-sm">
+                                {t('entry_fee', {}, 'room')}: {tier.price.toLocaleString()} تومان
+                            </Text>
+                            <Text className="text-yellow-500 text-sm">
+                                🏆 {t('max_prize', {}, 'room')}: {tier.prize.toLocaleString()} تومان
+                            </Text>
+                        </View>
+                        <View className="bg-yellow-600 px-4 py-2 rounded-xl">
+                            <Text className="text-white font-bold">{t('play', {}, 'common')}</Text>
+                        </View>
+                    </TouchableOpacity>
+                ))}
+
+                {/* دکمه‌های سریع */}
+                <View className="flex-row justify-between mt-4 mb-8">
+                    <TouchableOpacity className="flex-1 bg-gray-800 rounded-xl p-4 mx-1 items-center">
+                        <Text className="text-2xl mb-1">👥</Text>
+                        <Text className="text-white text-sm">{t('private_room', {}, 'room')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity className="flex-1 bg-gray-800 rounded-xl p-4 mx-1 items-center">
+                        <Text className="text-2xl mb-1">💰</Text>
+                        <Text className="text-white text-sm">{t('deposit', {}, 'common')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity className="flex-1 bg-gray-800 rounded-xl p-4 mx-1 items-center">
+                        <Text className="text-2xl mb-1">📤</Text>
+                        <Text className="text-white text-sm">{t('transfer', {}, 'common')}</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+        </LinearGradient>
+    );
+}
