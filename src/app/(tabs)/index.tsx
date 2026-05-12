@@ -215,3 +215,151 @@ export default function LobbyScreen() {
         </LinearGradient>
     );
 }
+
+// src/app/(tabs)/index.tsx
+import React, { useState, useEffect } from 'react';
+import {
+    View,
+    ScrollView,
+    StyleSheet,
+    SafeAreaView,
+    StatusBar,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import LobbyHeader from '../../components/lobby/LobbyHeader';
+import RoomCard from '../../components/lobby/RoomCard';
+import FloatingChatButton from '../../components/lobby/FloatingChatButton';
+import LobbyFooter from '../../components/lobby/LobbyFooter';
+import GlobalChatDrawer from '../../components/chat/GlobalChatDrawer';
+import { useUIStore } from '../../stores/uiStore';
+import { useAuthStore } from '../../stores/authStore';
+import { colors } from '../../constants/colors';
+
+// اطلاعات اتاق‌های بازی
+const ROOMS = [
+    {
+        id: 1,
+        name: '۵,۰۰۰ تومانی',
+        price: 5000,
+        prize: '۱۲۱,۵۰۰',
+        players: 12,
+        maxPlayers: 30,
+        image: require('../../../assets/images/notes/5000.png'),
+        color: '#10b981',
+        gradientColors: ['rgba(16,185,129,0.15)', 'rgba(16,185,129,0.05)'],
+    },
+    {
+        id: 2,
+        name: '۱۰,۰۰۰ تومانی',
+        price: 10000,
+        prize: '۲۴۳,۰۰۰',
+        players: 24,
+        maxPlayers: 30,
+        image: require('../../../assets/images/notes/10000.png'),
+        color: '#3b82f6',
+        gradientColors: ['rgba(59,130,246,0.15)', 'rgba(59,130,246,0.05)'],
+    },
+    {
+        id: 3,
+        name: '۲۰,۰۰۰ تومانی',
+        price: 20000,
+        prize: '۴۸۶,۰۰۰',
+        players: 18,
+        maxPlayers: 30,
+        image: require('../../../assets/images/notes/20000.png'),
+        color: '#8b5cf6',
+        gradientColors: ['rgba(139,92,246,0.15)', 'rgba(139,92,246,0.05)'],
+    },
+    {
+        id: 4,
+        name: '۵۰,۰۰۰ تومانی',
+        price: 50000,
+        prize: '۱,۲۱۵,۰۰۰',
+        players: 8,
+        maxPlayers: 30,
+        image: require('../../../assets/images/notes/50000.png'),
+        color: '#f59e0b',
+        gradientColors: ['rgba(245,158,11,0.15)', 'rgba(245,158,11,0.05)'],
+    },
+    {
+        id: 5,
+        name: '۱۰۰,۰۰۰ تومانی',
+        price: 100000,
+        prize: '۲,۴۳۰,۰۰۰',
+        players: 5,
+        maxPlayers: 30,
+        image: require('../../../assets/images/notes/100000.png'),
+        color: '#ef4444',
+        gradientColors: ['rgba(239,68,68,0.15)', 'rgba(239,68,68,0.05)'],
+    },
+];
+
+export default function LobbyScreen() {
+    const { theme } = useUIStore();
+    const { user } = useAuthStore();
+    const [isChatVisible, setIsChatVisible] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(3); // نمونه عدد
+    const currentColors = colors[theme];
+
+    useEffect(() => {
+        StatusBar.setBarStyle(theme === 'dark' ? 'light-content' : 'dark-content');
+        StatusBar.setBackgroundColor(currentColors.background);
+    }, [theme]);
+
+    return (
+        <LinearGradient
+            colors={[currentColors.background, currentColors.surface]}
+            style={styles.container}
+        >
+            <SafeAreaView style={styles.safeArea}>
+                {/* هدر */}
+                <LobbyHeader />
+
+                {/* لیست اتاق‌ها */}
+                <ScrollView 
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContent}
+                >
+                    {ROOMS.map((room) => (
+                        <RoomCard
+                            key={room.id}
+                            {...room}
+                        />
+                    ))}
+                    <View style={styles.bottomPadding} />
+                </ScrollView>
+
+                {/* فوتر */}
+                <LobbyFooter />
+
+                {/* دکمه شناور چت */}
+                <FloatingChatButton
+                    unreadCount={unreadCount}
+                    onPress={() => setIsChatVisible(true)}
+                />
+
+                {/* صفحه کشویی چت عمومی */}
+                <GlobalChatDrawer
+                    visible={isChatVisible}
+                    onClose={() => setIsChatVisible(false)}
+                    onMessageRead={() => setUnreadCount(0)}
+                />
+            </SafeAreaView>
+        </LinearGradient>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    safeArea: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingVertical: 12,
+    },
+    bottomPadding: {
+        height: 20,
+    },
+});
