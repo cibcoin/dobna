@@ -173,6 +173,29 @@ assets/
         └── waiting-room.mp3                       # اتاق انتظار
 
 
+
+
+
+
+components/
+constants/
+hooks/
+lib/
+services/
+stores/
+utils/
+types/
+styles/
+
+
+
+
+
+
+
+
+
+
 dobna-game/
 ├── src/                          📁 تمام کدهای اصلی اینجاست
 │   ├── app/                      📁 صفحات اصلی (با Expo Router)
