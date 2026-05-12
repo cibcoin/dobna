@@ -112,3 +112,9 @@ npx expo install expo-linear-gradient
 
 # نصب gesture handler برای کشیدن دکمه چت
 npx expo install react-native-gesture-handler
+
+# نصب ImagePicker برای انتخاب آواتار
+npx expo install expo-image-picker
+
+# نصب AsyncStorage برای ذخیره تم
+npx expo install @react-native-async-storage/async-storage
