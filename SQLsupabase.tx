@@ -1583,3 +1583,19 @@ as $$
     order by m.created_at desc
     limit 50;
 $$;
+-- ایجاد bucket برای ذخیره آواتارها
+insert into storage.buckets (id, name, public) 
+values ('avatars', 'avatars', true);
+
+-- سیاست امنیتی برای آپلود آواتار
+create policy "Users can upload their own avatar"
+on storage.objects for insert
+with check (
+    bucket_id = 'avatars' 
+    and auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- سیاست امنیتی برای مشاهده آواتارها
+create policy "Anyone can view avatars"
+on storage.objects for select
+using (bucket_id = 'avatars');
