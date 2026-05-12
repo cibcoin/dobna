@@ -79,3 +79,7 @@ git push origin v1.0.0
 Type    Name     Value
 A       @        76.76.21.21    (Vercel IP)
 CNAME   www      dobna.ir
+
+
+# نصب expo-font برای مدیریت فونت
+npx expo install expo-font
