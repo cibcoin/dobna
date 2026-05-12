@@ -40,3 +40,51 @@ export default function HomeScreen() {
     </View>
   );
 }
+import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { useTranslation } from '../i18n/hooks/useTranslation';
+import { Link } from 'expo-router';
+import { APP_CONFIG } from '../constants/config';
+
+export default function HomeScreen() {
+  const { t, isRTL } = useTranslation();
+  
+  return (
+    <View className="flex-1 bg-gray-900">
+      {/* هدر با لوگو */}
+      <View className="items-center pt-12 pb-6">
+        <Text className="text-yellow-500 text-4xl font-bold">
+          {t('app_name', {}, 'common')}
+        </Text>
+        <Text className="text-gray-400 text-sm mt-1">
+          {t('app_subtitle', {}, 'common')}
+        </Text>
+      </View>
+      
+      {/* محتوای اصلی */}
+      <View className="flex-1 px-4">
+        <Link href="/(tabs)" asChild>
+          <TouchableOpacity className="bg-yellow-600 rounded-xl p-4 mb-4">
+            <Text className="text-white text-center font-bold text-lg">
+              {t('start_game', {}, 'common') || 'شروع بازی'}
+            </Text>
+          </TouchableOpacity>
+        </Link>
+        
+        <Link href="/(tabs)/rooms" asChild>
+          <TouchableOpacity className="bg-gray-800 rounded-xl p-4">
+            <Text className="text-white text-center font-bold text-lg">
+              {t('public_rooms', {}, 'room')}
+            </Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
+      
+      {/* فوتر با دامنه */}
+      <View className="py-4 items-center">
+        <Text className="text-gray-600 text-xs">
+          {APP_CONFIG.domain}
+        </Text>
+      </View>
+    </View>
+  );
+}
