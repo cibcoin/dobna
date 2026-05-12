@@ -697,7 +697,35 @@ assets/
 
 
 
-
+src/
+├── app/
+│   ├── (auth)/
+│   │   ├── _layout.tsx
+│   │   ├── index.tsx              # صفحه خوش‌آمدگویی
+│   │   ├── phone-login.tsx        # صفحه ورود با شماره موبایل
+│   │   ├── verify-otp.tsx         # صفحه تأیید کد
+│   │   └── terms.tsx              # صفحه قوانین و حریم خصوصی
+│   ├── (tabs)/
+│   │   ├── _layout.tsx
+│   │   ├── index.tsx              # صفحه اصلی (اتاق‌ها)
+│   │   ├── profile.tsx
+│   │   └── chat.tsx
+│   └── _layout.tsx
+│
+├── components/
+│   ├── auth/
+│   │   ├── CountryPicker.tsx      # انتخابگر کشور
+│   │   └── LanguageSelector.tsx   # انتخابگر زبان
+│   └── UI/
+│       ├── Button.tsx
+│       └── GradientBackground.tsx
+│
+├── lib/
+│   └── auth.ts                    # توابع احراز هویت با OTP
+│
+└── constants/
+    ├── countries.ts               # لیست کشورها
+    └── languages.ts               # لیست زبان‌ها
 
 
 ```
