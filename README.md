@@ -824,6 +824,29 @@ src/app/(drawer)/
 └── terms.tsx                   # صفحه قوانین و شرایط
 
 
+src/
+├── app/
+│   ├── game/
+│   │   └── [roomId].tsx           # صفحه بازی (داینامیک برای همه اتاق‌ها)
+│   └── game-room/
+│       └── select-cards.tsx       # صفحه انتخاب تعداد کارت
+├── components/
+│   ├── game/
+│   │   ├── GameHeader.tsx         # هدر بازی (موجودی، جوایز، عدد فعلی، صدا)
+│   │   ├── GameStats.tsx          # آمار بازی (برد خطی، برد پر)
+│   │   ├── BingoCardGrid.tsx      # نمایش کارت‌ها (کارت‌های کاربر در بالا)
+│   │   ├── CountdownTimer.tsx     # تایمر شمارش معکوس
+│   │   ├── WinnerModal.tsx        # مودال برنده با انیمیشن
+│   │   └── PlayerList.tsx         # لیست بازیکنان منتظر
+│   └── UI/
+│       ├── Stepper.tsx            # دکمه‌های + و - برای تعداد کارت
+│       └── SoundButton.tsx        # دکمه بلندگو
+└── lib/
+    └── gameEngine.ts              # موتور بازی (اعداد تصادفی، تشخیص برنده)
+
+
+
+
 ```
 
 
