@@ -73,3 +73,9 @@ npm install --save-dev @types/i18n-js
 # ایجاد تگ نسخه
 git tag -a v1.0.0 -m "First release - Dobna Game"
 git push origin v1.0.0
+
+
+# تنظیمات DNS پیشنهادی
+Type    Name     Value
+A       @        76.76.21.21    (Vercel IP)
+CNAME   www      dobna.ir
