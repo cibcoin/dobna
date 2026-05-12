@@ -105,3 +105,23 @@ export default function CountryPicker({ value, onChange, placeholder }: CountryP
         </>
     );
 }
+
+// src/components/auth/CountryPicker.tsx (بخش نمایش پرچم)
+import { COUNTRIES, Country, DEFAULT_COUNTRY } from '../../constants/countries';
+
+// در قسمت render هر آیتم:
+const renderCountryItem = ({ item }: { item: Country }) => (
+    <TouchableOpacity onPress={() => onChange(item)}>
+        <View className="flex-row items-center px-4 py-3">
+            {/* ایموجی پرچم - بدون نیاز به فایل تصویری */}
+            <Text className="text-2xl w-10 text-center">{item.emoji}</Text>
+            
+            <View className="flex-1">
+                <Text className="text-white text-base">{item.name}</Text>
+                <Text className="text-gray-500 text-xs">+{item.dialCode}</Text>
+            </View>
+            
+            {selected && <Text className="text-green-500">✓</Text>}
+        </View>
+    </TouchableOpacity>
+);
