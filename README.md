@@ -811,7 +811,17 @@ src/
     └── colors.ts                   # رنگ‌های تم
 
 
-
+src/app/(drawer)/
+├── account.tsx                 # صفحه حساب کاربری
+├── deposit-withdraw.tsx        # صفحه واریز و برداشت
+├── transfer.tsx                # صفحه انتقال اعتبار
+├── financial-reports.tsx       # صفحه گزارشات مالی
+├── my-wins.tsx                 # صفحه لیست بردهای من
+├── create-group.tsx            # صفحه ساخت گروه
+├── top-groups.tsx              # صفحه گروه‌های برتر
+├── support.tsx                 # صفحه پشتیبانی
+├── faq.tsx                     # صفحه سوالات متداول
+└── terms.tsx                   # صفحه قوانین و شرایط
 
 
 ```
