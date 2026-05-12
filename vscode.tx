@@ -83,3 +83,12 @@ CNAME   www      dobna.ir
 
 # نصب expo-font برای مدیریت فونت
 npx expo install expo-font
+
+# برای Lottie animations
+npx expo install lottie-react-native
+
+# برای SVG
+npx expo install react-native-svg
+
+# برای صدا
+npx expo install expo-av
