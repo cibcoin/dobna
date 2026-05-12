@@ -387,3 +387,45 @@ export default function GameScreen() {
     </View>
   );
 }
+// app/game/[roomId].tsx - اضافه کردن دکمه چت
+import { useState } from 'react';
+import { TouchableOpacity, View, Text } from 'react-native';
+import ChatDrawer from '../../components/Chat/ChatDrawer';
+
+export default function GameScreen() {
+    const [isChatVisible, setIsChatVisible] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const { roomId } = useLocalSearchParams();
+    
+    // ... بقیه کدهای صفحه بازی
+    
+    return (
+        <View className="flex-1 bg-gray-900">
+            {/* دکمه چت در گوشه چپ پایین */}
+            <TouchableOpacity
+                onPress={() => {
+                    setIsChatVisible(true);
+                    setUnreadCount(0);
+                }}
+                className="absolute left-4 bottom-20 z-50 bg-yellow-600 w-14 h-14 rounded-full justify-center items-center shadow-lg"
+                activeOpacity={0.8}
+            >
+                <Text className="text-white text-2xl">💬</Text>
+                {unreadCount > 0 && (
+                    <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[20px] h-5 px-1 justify-center items-center">
+                        <Text className="text-white text-xs font-bold">{unreadCount}</Text>
+                    </View>
+                )}
+            </TouchableOpacity>
+            
+            {/* صفحه کشویی چت */}
+            <ChatDrawer
+                visible={isChatVisible}
+                roomId={roomId as string}
+                onClose={() => setIsChatVisible(false)}
+            />
+            
+            {/* بقیه محتوای صفحه بازی */}
+        </View>
+    );
+}
