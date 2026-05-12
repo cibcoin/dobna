@@ -185,3 +185,7 @@ export function validateAllStandardCards(): boolean {
   }
   return allValid;
 }
+// در BingoCard.tsx
+<CustomText variant="number" isNumber={true}>
+  {value !== 0 ? value : ''}
+</CustomText>
