@@ -429,3 +429,245 @@ export default function GameScreen() {
         </View>
     );
 }
+
+// src/app/game/[roomId].tsx
+import React, { useState, useEffect, useRef } from 'react';
+import {
+    View,
+    SafeAreaView,
+    Alert,
+    BackHandler,
+    AppState,
+} from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+import { useAuthStore } from '../../stores/authStore';
+import { useThemeStore } from '../../stores/themeStore';
+import { colors } from '../../constants/colors';
+import GameHeader from '../../components/game/GameHeader';
+import GameStats from '../../components/game/GameStats';
+import BingoCardGrid from '../../components/game/BingoCardGrid';
+import WinnerModal from '../../components/game/WinnerModal';
+import { supabase } from '../../lib/supabase';
+import { voiceAnnouncer } from '../../lib/voiceAnnouncer';
+import { generateRandomCard } from '../../lib/standardCards';
+
+// جوایز بر اساس tier
+const PRIZES: Record<string, { line: number; full: number }> = {
+    '5000': { line: 13500, full: 121500 },
+    '10000': { line: 27000, full: 243000 },
+    '20000': { line: 54000, full: 486000 },
+    '50000': { line: 135000, full: 1215000 },
+    '100000': { line: 270000, full: 2430000 },
+};
+
+export default function GameScreen() {
+    const { roomId, tierId, tierName, cardPrice, cardsCount } = useLocalSearchParams();
+    const { user, balance } = useAuthStore();
+    const { theme } = useThemeStore();
+    const currentColors = colors[theme];
+    
+    const [myCards, setMyCards] = useState<any[]>([]);
+    const [allCards, setAllCards] = useState<any[]>([]);
+    const [markedNumbers, setMarkedNumbers] = useState<Set<number>>(new Set());
+    const [currentNumber, setCurrentNumber] = useState<number | null>(null);
+    const [blinkingNumber, setBlinkingNumber] = useState<number | null>(null);
+    const [lineWinner, setLineWinner] = useState<string | null>(null);
+    const [fullWinner, setFullWinner] = useState<string | null>(null);
+    const [isMuted, setIsMuted] = useState(false);
+    const [showWinnerModal, setShowWinnerModal] = useState(false);
+    const [winners, setWinners] = useState<{ type: 'line' | 'full'; name: string; amount: number }[]>([]);
+    const [gameActive, setGameActive] = useState(true);
+    
+    const stopAnnouncingRef = useRef<(() => void) | null>(null);
+    const prizes = PRIZES[tierId as string] || { line: 27000, full: 243000 };
+
+    // بارگذاری کارت‌ها
+    useEffect(() => {
+        loadCards();
+        
+        // گوش دادن به تغییرات برد
+        const subscription = supabase
+            .channel(`game:${roomId}`)
+            .on('broadcast', { event: 'number_called' }, ({ payload }) => {
+                handleNumberCalled(payload.number);
+            })
+            .on('broadcast', { event: 'winner_declared' }, ({ payload }) => {
+                handleWinnerDeclared(payload);
+            })
+            .subscribe();
+        
+        // مدیریت قطعی اینترنت
+        const appStateListener = AppState.addEventListener('change', (nextAppState) => {
+            if (nextAppState === 'active' && !gameActive) {
+                checkWinnerAfterReconnect();
+            }
+        });
+        
+        // دکمه بازگشت
+        BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+        
+        return () => {
+            subscription.unsubscribe();
+            appStateListener.remove();
+            if (stopAnnouncingRef.current) {
+                stopAnnouncingRef.current();
+            }
+            voiceAnnouncer.setMuted(true);
+        };
+    }, []);
+
+    const loadCards = async () => {
+        // دریافت کارت‌های این بازی
+        const { data } = await supabase
+            .from('game_cards_extended')
+            .select(`
+                id,
+                card_number,
+                user_id,
+                card_data,
+                profiles (username)
+            `)
+            .eq('game_id', roomId);
+        
+        if (data) {
+            const formattedCards = data.map(card => ({
+                id: card.id,
+                card_number: card.card_number,
+                user_id: card.user_id,
+                username: card.profiles.username,
+                card_data: card.card_data,
+            }));
+            
+            setAllCards(formattedCards);
+            
+            // کارت‌های کاربر جاری
+            const userCards = formattedCards.filter(c => c.user_id === user?.id);
+            setMyCards(userCards);
+        }
+    };
+
+    const handleNumberCalled = (number: number) => {
+        if (!gameActive) return;
+        
+        setCurrentNumber(number);
+        setBlinkingNumber(number);
+        setMarkedNumbers(prev => new Set([...prev, number]));
+        
+        // پخش صدا
+        if (!isMuted) {
+            voiceAnnouncer.setMuted(false);
+            // پخش صدای عدد
+        }
+        
+        setTimeout(() => setBlinkingNumber(null), 500);
+    };
+
+    const handleWinnerDeclared = (payload: any) => {
+        setGameActive(false);
+        
+        if (stopAnnouncingRef.current) {
+            stopAnnouncingRef.current();
+        }
+        
+        setWinners(payload.winners);
+        setShowWinnerModal(true);
+        
+        if (payload.winners.find((w: any) => w.userId === user?.id)) {
+            // به‌روزرسانی موجودی کاربر
+            const totalWin = payload.winners
+                .filter((w: any) => w.userId === user?.id)
+                .reduce((sum: number, w: any) => sum + w.amount, 0);
+            
+            // آپدیت موجودی در دیتابیس
+            supabase
+                .from('profiles')
+                .update({ balance: (balance || 0) + totalWin })
+                .eq('id', user?.id);
+        }
+    };
+
+    const checkWinnerAfterReconnect = async () => {
+        const { data } = await supabase
+            .from('game_sessions')
+            .select('line_winner_id, full_house_winner_id, status')
+            .eq('id', roomId)
+            .single();
+        
+        if (data?.status === 'finished') {
+            if (data.line_winner_id === user?.id) {
+                setLineWinner(user?.username || '');
+            }
+            if (data.full_house_winner_id === user?.id) {
+                setFullWinner(user?.username || '');
+            }
+            setGameActive(false);
+        }
+    };
+
+    const handleBackPress = () => {
+        Alert.alert(
+            'خروج از بازی',
+            'آیا مطمئن هستید می‌خواهید از بازی خارج شوید؟',
+            [
+                { text: 'بازگشت به بازی', style: 'cancel' },
+                { 
+                    text: 'خروج', 
+                    style: 'destructive',
+                    onPress: () => router.replace('/(tabs)')
+                },
+            ]
+        );
+        return true;
+    };
+
+    const toggleMute = () => {
+        setIsMuted(!isMuted);
+        voiceAnnouncer.setMuted(!isMuted);
+    };
+
+    const otherCards = allCards.filter(c => c.user_id !== user?.id);
+
+    return (
+        <LinearGradient colors={[currentColors.background, currentColors.surface]} style={{ flex: 1 }}>
+            <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+            
+            <SafeAreaView style={{ flex: 1 }}>
+                <GameHeader
+                    balance={balance || 0}
+                    linePrize={prizes.line}
+                    fullPrize={prizes.full}
+                    currentNumber={currentNumber}
+                    isMuted={isMuted}
+                    onMuteToggle={toggleMute}
+                    colors={currentColors}
+                />
+                
+                <GameStats
+                    lineWinner={lineWinner}
+                    fullWinner={fullWinner}
+                    colors={currentColors}
+                />
+                
+                <BingoCardGrid
+                    myCards={myCards}
+                    otherCards={otherCards}
+                    markedNumbers={markedNumbers}
+                    blinkingNumber={blinkingNumber}
+                    colors={currentColors}
+                />
+                
+                <WinnerModal
+                    visible={showWinnerModal}
+                    winners={winners}
+                    onClose={() => {
+                        setShowWinnerModal(false);
+                        router.replace('/(tabs)');
+                    }}
+                    colors={currentColors}
+                />
+            </SafeAreaView>
+        </LinearGradient>
+    );
+}
