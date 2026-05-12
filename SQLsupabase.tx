@@ -1661,3 +1661,84 @@ create trigger trigger_update_card_stats
     after insert on public.winners_history
     for each row
     execute function update_card_win_stats();
+
+-- ============================================
+-- Webhook برای ارسال خودکار رویدادها
+-- ============================================
+
+-- 1. تابع ارسال به Edge Function
+create or replace function notify_admin_via_webhook()
+returns trigger
+language plpgsql
+as $$
+declare
+    webhook_url text := 'https://your-project.supabase.co/functions/v1/notify-admin';
+    payload json;
+begin
+    -- ساخت payload بر اساس نوع رویداد
+    if TG_TABLE_NAME = 'withdraw_requests' then
+        payload = json_build_object(
+            'event', 'new_withdraw',
+            'data', row_to_json(NEW),
+            'timestamp', now()
+        );
+    elsif TG_TABLE_NAME = 'transactions' and NEW.type = 'deposit' and NEW.status = 'completed' then
+        payload = json_build_object(
+            'event', 'new_deposit',
+            'data', row_to_json(NEW),
+            'timestamp', now()
+        );
+    elsif TG_TABLE_NAME = 'support_tickets' then
+        payload = json_build_object(
+            'event', 'new_ticket',
+            'data', row_to_json(NEW),
+            'timestamp', now()
+        );
+    elsif TG_TABLE_NAME = 'winners_history' then
+        payload = json_build_object(
+            'event', 'new_winner',
+            'data', row_to_json(NEW),
+            'timestamp', now()
+        );
+    else
+        return NEW;
+    end if;
+    
+    -- ارسال HTTP request به Edge Function
+    perform
+        net.http_post(
+            url := webhook_url,
+            headers := jsonb_build_object('Content-Type', 'application/json'),
+            body := payload::jsonb
+        );
+    
+    return NEW;
+end;
+$$;
+
+-- 2. ایجاد Triggers برای هر جدول
+
+-- درخواست برداشت جدید
+create trigger trigger_notify_withdraw
+    after insert on public.withdraw_requests
+    for each row
+    execute function notify_admin_via_webhook();
+
+-- واریز موفق
+create trigger trigger_notify_deposit
+    after insert on public.transactions
+    for each row
+    when (NEW.type = 'deposit' and NEW.status = 'completed')
+    execute function notify_admin_via_webhook();
+
+-- تیکت پشتیبانی جدید
+create trigger trigger_notify_ticket
+    after insert on public.support_tickets
+    for each row
+    execute function notify_admin_via_webhook();
+
+-- برنده جدید
+create trigger trigger_notify_winner
+    after insert on public.winners_history
+    for each row
+    execute function notify_admin_via_webhook();
