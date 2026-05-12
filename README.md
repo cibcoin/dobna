@@ -796,6 +796,24 @@ src/
     └── authStore.ts
 
 
+
+src/
+├── components/
+│   └── drawer/
+│       └── DrawerMenu.tsx          # کامپوننت اصلی منو
+├── app/
+│   └── (drawer)/
+│       ├── _layout.tsx             # layout منو
+│       └── index.tsx               # صفحه منو
+├── stores/
+│   └── themeStore.ts               # مدیریت تم (Dark/Light)
+└── constants/
+    └── colors.ts                   # رنگ‌های تم
+
+
+
+
+
 ```
 
 
