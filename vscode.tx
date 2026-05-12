@@ -68,3 +68,8 @@ npm install i18n-js
 
 # نصب types (برای TypeScript)
 npm install --save-dev @types/i18n-js
+
+
+# ایجاد تگ نسخه
+git tag -a v1.0.0 -m "First release - Dobna Game"
+git push origin v1.0.0
