@@ -662,6 +662,21 @@ src/
     └── chatStore.ts                # استیت چت
 
 
+assets/
+├── fonts/
+│   ├── Vazirmatn-Regular.ttf      # فونت اصلی فارسی (وزیر متن)
+│   ├── Vazirmatn-Bold.ttf
+│   ├── Vazirmatn-ExtraBold.ttf
+│   ├── Cairo-Regular.ttf           # فونت انگلیسی (ساده)
+│   ├── Cairo-Bold.ttf
+│   ├── Orbitron-Regular.ttf        # فونت اعداد (نمایش مبلغ‌ها)
+│   └── Orbitron-Bold.ttf
+
+
+
+
+
+
 ```
 
 
