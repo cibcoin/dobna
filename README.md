@@ -728,6 +728,23 @@ src/
     └── languages.ts               # لیست زبان‌ها
 
 
+
+src/
+├── constants/
+│   └── countries.ts          # لیست کشورها + ایموجی
+├── utils/
+│   └── flagEmoji.ts          # تبدیل کد کشور به ایموجی
+└── components/auth/
+    └── CountryPicker.tsx     # استفاده از ایموجی
+
+
+
+
+
+
+
+
+
 ```
 
 
