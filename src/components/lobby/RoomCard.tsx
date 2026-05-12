@@ -154,3 +154,16 @@ const styles = StyleSheet.create({
         fontSize: 11,
     },
 });
+// در قسمت handlePress، مسیر را به صفحه انتخاب کارت تغییر دهید:
+
+const handlePress = () => {
+    router.push({
+        pathname: '/game-room/select-cards',
+        params: {
+            tierId: id,
+            tierName: name,
+            cardPrice: price.toString(),
+            roomId: `room_${id}_${Date.now()}`, // ایجاد roomId موقت
+        }
+    });
+};
