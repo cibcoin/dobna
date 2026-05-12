@@ -646,6 +646,22 @@ src/i18n/
 │   │   └── errors.json
 └── hooks/
     └── useTranslation.ts
+
+src/
+├── components/
+│   └── Chat/
+│       ├── ChatDrawer.tsx          # صفحه کشویی چت
+│       ├── ChatMessage.tsx         # کامپوننت هر پیام
+│       ├── ChatInput.tsx           # ورودی پیام
+│       └── ChatHeader.tsx          # هدر چت
+├── hooks/
+│   └── useChat.ts                  # هوک مدیریت چت
+├── services/
+│   └── chatService.ts              # سرویس چت
+└── stores/
+    └── chatStore.ts                # استیت چت
+
+
 ```
 
 
