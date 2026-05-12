@@ -92,3 +92,9 @@ npx expo install react-native-svg
 
 # برای صدا
 npx expo install expo-av
+
+# برای انتخاب تصویر از گالری
+npx expo install expo-image-picker
+
+# برای تبدیل base64
+npm install base64-arraybuffer
