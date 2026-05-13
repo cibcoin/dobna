@@ -240,3 +240,11 @@ async function sendToWhatsApp(title: string, message: string): Promise<boolean> 
         return false;
     }
 }
+// supabase/functions/notify-admin/index.ts
+const BALE_BOT_TOKEN = Deno.env.get('BALE_BOT_TOKEN') || '';
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN') || '';
+const ADMIN_ID = Deno.env.get('BALE_ADMIN_ID') || '';
+
+if (!BALE_BOT_TOKEN) {
+    console.error('BALE_BOT_TOKEN is not set');
+}
