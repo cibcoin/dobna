@@ -240,3 +240,14 @@ export default function TransferScreen() {
         </LinearGradient>
     );
 }
+// اضافه کردن بخش نمایش شماره حساب خود کاربر
+
+import AccountCard from '../../components/profile/AccountCard';
+
+// در صفحه انتقال اعتبار، در بالا:
+<ScrollView>
+    {/* نمایش حساب خود کاربر */}
+    <AccountCard />
+    
+    {/* بقیه محتوای صفحه انتقال */}
+</ScrollView>
