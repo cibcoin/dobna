@@ -1768,3 +1768,351 @@ serve(async (req) => {
     const result = await response.json();
     return new Response(JSON.stringify(result), { status: 200 });
 });
+
+-- ============================================
+-- سیستم حساب کاربری (ID Chat) دوبنا
+-- ============================================
+
+-- 1. جدول حساب‌های کاربران
+create table public.user_accounts (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null unique,
+    account_number text unique not null,  -- شماره حساب ۱۰ رقمی
+    balance bigint default 0,             -- موجودی اصلی
+    locked_balance bigint default 0,      -- موجودی قفل شده (برای گروه‌ها)
+    created_at timestamp with time zone default now(),
+    updated_at timestamp with time zone default now(),
+    is_active boolean default true
+);
+
+-- 2. جدول مرکزی دوبنا (حساب اصلی)
+create table public.central_account (
+    id integer primary key default 1,
+    account_number text unique not null default '1111111111',
+    balance bigint default 0,
+    total_commission bigint default 0,    -- کل کارمزدهای دریافتی
+    total_locked bigint default 0,        -- کل مبالغ قفل شده
+    updated_at timestamp with time zone default now()
+);
+
+-- 3. جدول قفل‌های گروه (برای ساخت گروه)
+create table public.group_locks (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    group_id uuid references public.groups(id),
+    amount bigint not null,
+    lock_type text check (lock_type in ('private_group', 'public_group')),
+    status text default 'locked' check (status in ('locked', 'released', 'forfeited')),
+    locked_at timestamp with time zone default now(),
+    released_at timestamp with time zone,
+    notes text
+);
+
+-- 4. جدول تاریخچه تراکنش‌های داخلی (بین کاربران)
+create table public.internal_transfers (
+    id uuid default uuid_generate_v4() primary key,
+    from_account text not null references public.user_accounts(account_number),
+    to_account text not null references public.user_accounts(account_number),
+    amount bigint not null,
+    fee bigint default 0,                 -- کارمزد انتقال
+    net_amount bigint not null,           -- مبلغ خالص پس از کارمزد
+    description text,
+    status text default 'completed',
+    created_at timestamp with time zone default now(),
+    reference_id text
+);
+
+-- ============================================
+-- توابع تولید شماره حساب ۱۰ رقمی
+-- ============================================
+
+-- تابع تولید شماره حساب تصادفی ۱۰ رقمی
+create or replace function generate_account_number()
+returns text
+language plpgsql
+as $$
+declare
+    new_account text;
+    exists_account boolean;
+begin
+    loop
+        -- تولید عدد ۱۰ رقمی تصادفی (1 تا 9 برای جلوگیری از صفر ابتدایی)
+        new_account := floor(random() * 9000000000 + 1000000000)::text;
+        
+        -- بررسی یکتایی
+        select exists(select 1 from public.user_accounts where account_number = new_account) into exists_account;
+        exit when not exists_account;
+    end loop;
+    
+    return new_account;
+end;
+$$;
+
+-- ============================================
+-- تابع ایجاد خودکار حساب برای کاربر جدید
+-- ============================================
+
+create or replace function create_user_account()
+returns trigger
+language plpgsql
+as $$
+declare
+    new_account_number text;
+begin
+    -- تولید شماره حساب یکتا
+    new_account_number := generate_account_number();
+    
+    -- ایجاد حساب کاربری
+    insert into public.user_accounts (user_id, account_number, balance)
+    values (NEW.id, new_account_number, 0);
+    
+    return NEW;
+end;
+$$;
+
+-- تریگر برای ایجاد حساب پس از ثبت‌نام کاربر
+create trigger trigger_create_user_account
+    after insert on public.profiles
+    for each row
+    execute function create_user_account();
+
+-- اطمینان از وجود حساب مرکزی
+insert into public.central_account (account_number, balance)
+select '1111111111', 0
+where not exists (select 1 from public.central_account);
+
+-- ============================================
+-- تابع انتقال اعتبار بین کاربران
+-- ============================================
+
+create or replace function transfer_credit(
+    p_from_account text,
+    p_to_account text,
+    p_amount bigint,
+    p_description text default ''
+)
+returns json
+language plpgsql
+as $$
+declare
+    v_from_user_id uuid;
+    v_to_user_id uuid;
+    v_from_balance bigint;
+    v_to_balance bigint;
+    v_fee bigint;
+    v_net_amount bigint;
+    v_transfer_id uuid;
+    v_central_account text := '1111111111';
+begin
+    -- دریافت اطلاعات حساب مبدأ
+    select user_id, balance into v_from_user_id, v_from_balance
+    from public.user_accounts
+    where account_number = p_from_account;
+    
+    if not found then
+        return json_build_object('success', false, 'error', 'حساب مبدأ یافت نشد');
+    end if;
+    
+    -- دریافت اطلاعات حساب مقصد
+    select user_id, balance into v_to_user_id, v_to_balance
+    from public.user_accounts
+    where account_number = p_to_account;
+    
+    if not found then
+        return json_build_object('success', false, 'error', 'حساب مقصد یافت نشد');
+    end if;
+    
+    -- بررسی حداقل و حداکثر مبلغ
+    if p_amount < 10000 then
+        return json_build_object('success', false, 'error', 'حداقل مبلغ انتقال ۱۰,۰۰۰ تومان است');
+    end if;
+    
+    if p_amount > 1000000 then
+        return json_build_object('success', false, 'error', 'حداکثر مبلغ انتقال ۱,۰۰۰,۰۰۰ تومان است');
+    end if;
+    
+    -- محاسبه کارمزد (۱٪)
+    v_fee := p_amount * 0.01;
+    v_net_amount := p_amount - v_fee;
+    
+    -- بررسی موجودی کافی
+    if v_from_balance < p_amount then
+        return json_build_object('success', false, 'error', 'موجودی کافی نیست');
+    end if;
+    
+    -- شروع تراکنش
+    begin
+        -- 1. کم کردن از حساب مبدأ
+        update public.user_accounts
+        set balance = balance - p_amount,
+            updated_at = now()
+        where account_number = p_from_account;
+        
+        -- 2. اضافه کردن به حساب مقصد
+        update public.user_accounts
+        set balance = balance + v_net_amount,
+            updated_at = now()
+        where account_number = p_to_account;
+        
+        -- 3. اضافه کردن کارمزد به حساب مرکزی
+        update public.central_account
+        set balance = balance + v_fee,
+            total_commission = total_commission + v_fee
+        where account_number = v_central_account;
+        
+        -- 4. ثبت تراکنش
+        insert into public.internal_transfers (
+            from_account, to_account, amount, fee, net_amount, description
+        ) values (
+            p_from_account, p_to_account, p_amount, v_fee, v_net_amount, p_description
+        ) returning id into v_transfer_id;
+        
+        return json_build_object(
+            'success', true,
+            'transfer_id', v_transfer_id,
+            'from_balance', v_from_balance - p_amount,
+            'to_balance', v_to_balance + v_net_amount,
+            'fee', v_fee,
+            'net_amount', v_net_amount
+        );
+        
+    exception when others then
+        return json_build_object('success', false, 'error', 'خطا در انجام انتقال');
+    end;
+end;
+$$;
+
+-- ============================================
+-- تابع قفل مبلغ برای ساخت گروه
+-- ============================================
+
+create or replace function lock_amount_for_group(
+    p_user_id uuid,
+    p_amount bigint,
+    p_lock_type text,
+    p_group_id uuid default null
+)
+returns json
+language plpgsql
+as $$
+declare
+    v_user_balance bigint;
+    v_user_locked bigint;
+    v_lock_id uuid;
+begin
+    -- دریافت موجودی کاربر
+    select balance, locked_balance into v_user_balance, v_user_locked
+    from public.user_accounts
+    where user_id = p_user_id;
+    
+    if not found then
+        return json_build_object('success', false, 'error', 'حساب کاربری یافت نشد');
+    end if;
+    
+    -- بررسی موجودی قابل استفاده (موجودی - قفل شده)
+    if (v_user_balance - v_user_locked) < p_amount then
+        return json_build_object('success', false, 'error', 'موجودی آزاد کافی نیست');
+    end if;
+    
+    -- بررسی نوع قفل
+    if p_lock_type = 'private_group' and p_amount != 1000000 then
+        return json_build_object('success', false, 'error', 'مبلغ قفل برای گروه خصوصی باید ۱,۰۰۰,۰۰۰ تومان باشد');
+    end if;
+    
+    if p_lock_type = 'public_group' and p_amount != 10000000 then
+        return json_build_object('success', false, 'error', 'مبلغ قفل برای گروه عمومی باید ۱۰,۰۰۰,۰۰۰ تومان باشد');
+    end if;
+    
+    -- شروع تراکنش
+    begin
+        -- افزایش موجودی قفل شده
+        update public.user_accounts
+        set locked_balance = locked_balance + p_amount,
+            balance = balance - p_amount,
+            updated_at = now()
+        where user_id = p_user_id;
+        
+        -- افزایش قفل در حساب مرکزی
+        update public.central_account
+        set total_locked = total_locked + p_amount
+        where account_number = '1111111111';
+        
+        -- ثبت قفل
+        insert into public.group_locks (
+            user_id, group_id, amount, lock_type, status
+        ) values (
+            p_user_id, p_group_id, p_amount, p_lock_type, 'locked'
+        ) returning id into v_lock_id;
+        
+        return json_build_object(
+            'success', true,
+            'lock_id', v_lock_id,
+            'locked_amount', p_amount,
+            'new_balance', v_user_balance - p_amount,
+            'new_locked', v_user_locked + p_amount
+        );
+        
+    exception when others then
+        return json_build_object('success', false, 'error', 'خطا در قفل کردن مبلغ');
+    end;
+end;
+$$;
+
+-- ============================================
+-- تابع آزاد کردن قفل گروه
+-- ============================================
+
+create or replace function release_group_lock(
+    p_lock_id uuid,
+    p_user_id uuid
+)
+returns json
+language plpgsql
+as $$
+declare
+    v_lock_record record;
+    v_user_balance bigint;
+    v_user_locked bigint;
+begin
+    -- دریافت اطلاعات قفل
+    select * into v_lock_record
+    from public.group_locks
+    where id = p_lock_id and user_id = p_user_id and status = 'locked';
+    
+    if not found then
+        return json_build_object('success', false, 'error', 'قفلی یافت نشد');
+    end if;
+    
+    -- شروع تراکنش
+    begin
+        -- کاهش موجودی قفل شده و افزایش موجودی آزاد
+        update public.user_accounts
+        set locked_balance = locked_balance - v_lock_record.amount,
+            balance = balance + v_lock_record.amount,
+            updated_at = now()
+        where user_id = p_user_id
+        returning balance, locked_balance into v_user_balance, v_user_locked;
+        
+        -- کاهش قفل در حساب مرکزی
+        update public.central_account
+        set total_locked = total_locked - v_lock_record.amount
+        where account_number = '1111111111';
+        
+        -- بروزرسانی وضعیت قفل
+        update public.group_locks
+        set status = 'released',
+            released_at = now()
+        where id = p_lock_id;
+        
+        return json_build_object(
+            'success', true,
+            'released_amount', v_lock_record.amount,
+            'new_balance', v_user_balance,
+            'new_locked', v_user_locked
+        );
+        
+    exception when others then
+        return json_build_object('success', false, 'error', 'خطا در آزاد کردن قفل');
+    end;
+end;
+$$;
