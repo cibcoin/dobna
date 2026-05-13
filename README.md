@@ -1030,7 +1030,16 @@ src/
 
 
 
-
+src/
+├── app/(drawer)/
+│   └── create-group.tsx          # صفحه ساخت گروه
+├── components/
+│   ├── group/
+│   │   ├── GroupAvatarPicker.tsx # انتخاب آواتار گروه
+│   │   └── GroupTypeSelector.tsx # انتخاب نوع گروه
+│   └── UI/
+│       ├── RadioButton.tsx       # دکمه رادیویی
+│       └── Input.tsx             # فیلد ورودی
 
 
 
