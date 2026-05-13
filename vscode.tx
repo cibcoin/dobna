@@ -120,3 +120,16 @@ npx expo install expo-image-picker
 npx expo install @react-native-async-storage/async-storage
 
 https://your-project.supabase.co/functions/v1/bale-webhook
+
+# نصب Supabase CLI
+npm install -g supabase
+
+# لاگین
+supabase login
+
+# تنظیم متغیرهای محیطی در Supabase
+supabase secrets set BALE_BOT_TOKEN=your_token_here
+supabase secrets set TELEGRAM_BOT_TOKEN=your_token_here
+supabase secrets set BALE_ADMIN_ID=989111313188
+supabase secrets set SUPABASE_URL=https://your-project.supabase.co
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_key_here
