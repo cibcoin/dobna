@@ -133,3 +133,7 @@ supabase secrets set TELEGRAM_BOT_TOKEN=your_token_here
 supabase secrets set BALE_ADMIN_ID=989111313188
 supabase secrets set SUPABASE_URL=https://your-project.supabase.co
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_key_here
+
+
+npx expo install expo-clipboard
+
