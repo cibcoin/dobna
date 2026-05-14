@@ -2116,3 +2116,164 @@ begin
     end;
 end;
 $$;
+-- ============================================
+-- سیستم گروه‌های بازی (جایگزین اتاق‌های عمومی)
+-- ============================================
+
+-- 1. جدول گروه‌ها (Groups)
+create table public.groups (
+    id uuid default uuid_generate_v4() primary key,
+    name text not null,                          -- نام گروه (مثال: ایران سر بلند)
+    owner_id uuid references public.profiles(id) not null,
+    type text not null check (type in ('public', 'private')),
+    description text,
+    avatar_url text,
+    
+    -- آمار گروه
+    total_members integer default 1,
+    total_games integer default 0,
+    total_wins integer default 0,
+    rank_score integer default 0,                -- امتیاز رتبه‌بندی
+    
+    -- تنظیمات بازی
+    active_room_tier integer,                    -- تالار فعال فعلی (5000,10000,...)
+    active_game_id uuid,
+    
+    -- قفل مالی
+    locked_amount bigint default 0,
+    lock_id uuid,
+    
+    created_at timestamp with time zone default now(),
+    updated_at timestamp with time zone default now(),
+    is_active boolean default true
+);
+
+-- 2. جدول اعضای گروه
+create table public.group_members (
+    group_id uuid references public.groups(id) on delete cascade,
+    user_id uuid references public.profiles(id) on delete cascade,
+    role text default 'member' check (role in ('owner', 'admin', 'member')),
+    joined_at timestamp with time zone default now(),
+    primary key (group_id, user_id)
+);
+
+-- 3. جدول بازی‌های گروه (جایگزین active_rooms)
+create table public.group_games (
+    id uuid default uuid_generate_v4() primary key,
+    group_id uuid references public.groups(id) on delete cascade,
+    tier_id integer not null,                    -- 5000, 10000, 20000, 50000, 100000
+    status text default 'waiting' check (status in ('waiting', 'active', 'finished')),
+    
+    -- آمار بازی
+    total_cards integer default 0,               -- حداکثر 60 کارت
+    total_players integer default 0,
+    current_cards integer default 0,
+    
+    -- جوایز (بر اساس 60 کارت)
+    line_prize bigint,                           -- 2 برابر قبلی
+    full_house_prize bigint,                     -- 2 برابر قبلی
+    
+    -- برندگان
+    line_winner_id uuid,
+    full_house_winner_id uuid,
+    
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    created_at timestamp with time zone default now()
+);
+
+-- 4. جدول کارت‌های بازی (به‌روزرسانی شده)
+create table public.game_cards_new (
+    id uuid default uuid_generate_v4() primary key,
+    game_id uuid references public.group_games(id) on delete cascade,
+    user_id uuid references public.profiles(id),
+    card_number integer,                         -- 1 تا 60
+    card_data integer[][],                       -- 3x9 matrix
+    marked_numbers integer[] default '{}',
+    line_completed boolean[] default '{false, false, false}',
+    is_winner_line boolean default false,
+    is_winner_full boolean default false,
+    created_at timestamp with time zone default now()
+);
+
+-- 5. جدول رتبه‌بندی گروه‌ها (Leaderboard)
+create table public.group_leaderboard (
+    group_id uuid references public.groups(id) primary key,
+    rank integer,
+    score integer default 0,
+    games_played integer default 0,
+    total_wins integer default 0,
+    updated_at timestamp with time zone default now()
+);
+
+-- ============================================
+-- توابع جدید
+-- ============================================
+
+-- تابع پیدا کردن بهترین گروه برای یک تالار خاص
+create or replace function find_best_group_for_tier(p_tier_id integer)
+returns uuid
+language plpgsql
+as $$
+declare
+    v_group_id uuid;
+begin
+    -- پیدا کردن گروهی که:
+    -- 1. عمومی باشد
+    -- 2. تالار فعال آن با tier_id مطابقت داشته باشد
+    -- 3. بازی active داشته باشد که هنوز کارت خالی داشته باشد
+    -- 4. بر اساس امتیاز رتبه‌بندی مرتب شود
+    select g.id into v_group_id
+    from public.groups g
+    join public.group_games gg on gg.group_id = g.id
+    where g.type = 'public'
+      and g.active_room_tier = p_tier_id
+      and gg.status = 'waiting'
+      and gg.current_cards < 60
+    order by g.rank_score desc, gg.current_cards desc
+    limit 1;
+    
+    return v_group_id;
+end;
+$$;
+
+-- تابع شروع خودکار بازی (به محض پر شدن 60 کارت)
+create or replace function auto_start_group_game()
+returns trigger
+language plpgsql
+as $$
+declare
+    v_tier_record record;
+    v_line_prize bigint;
+    v_full_prize bigint;
+begin
+    -- بررسی اینکه آیا کارت‌ها به 60 رسیده است
+    if NEW.current_cards >= 60 and OLD.current_cards < 60 then
+        -- دریافت اطلاعات جایزه (2 برابر حالت 30 کارتی)
+        select * into v_tier_record from public.room_tiers where id = NEW.tier_id;
+        
+        v_line_prize := (60 * v_tier_record.card_price * 9) / 100;     -- 9% از کل 60 کارت
+        v_full_prize := (60 * v_tier_record.card_price * 81) / 100;    -- 81% از کل 60 کارت
+        
+        update public.group_games
+        set status = 'active',
+            line_prize = v_line_prize,
+            full_house_prize = v_full_prize,
+            started_at = now()
+        where id = NEW.id;
+        
+        -- بروزرسانی گروه
+        update public.groups
+        set active_game_id = NEW.id,
+            rank_score = rank_score + 10   -- افزایش امتیاز رتبه‌بندی
+        where id = NEW.group_id;
+    end if;
+    
+    return NEW;
+end;
+$$;
+
+create trigger trigger_auto_start_group_game
+    after update on public.group_games
+    for each row
+    execute function auto_start_group_game();
