@@ -2877,3 +2877,53 @@ $$;
 create trigger on_auth_user_created
     after insert on auth.users
     for each row execute function public.handle_new_user();
+
+
+
+
+-- ============================================
+-- جداول مدیریت کارت به کارت
+-- ============================================
+
+-- 1. تنظیمات حساب بانکی دوبنا
+create table public.bank_account_settings (
+    id integer primary key default 1,
+    card_number text not null,                  -- شماره کارت بانکی دوبنا
+    bank_name text not null,                    -- نام بانک
+    account_holder text not null,               -- نام صاحب حساب
+    shaba_number text,                          -- شماره شبا
+    is_active boolean default true,
+    updated_at timestamp with time zone default now()
+);
+
+-- 2. درخواست‌های شارژ کارت به کارت
+create table public.card_to_card_requests (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    amount bigint not null,
+    reference_code text unique,                 -- کد پیگیری یکتا (برای کاربر)
+    status text default 'pending' check (status in ('pending', 'paid', 'cancelled', 'failed')),
+    
+    -- اطلاعات واریز (توسط کاربر وارد می‌شود - اختیاری)
+    transaction_id text,                        -- شماره پیگیری بانکی کاربر
+    receipt_image text,                         -- تصویر رسید (اختیاری)
+    
+    -- اطلاعات تأیید (توسط ادمین)
+    admin_note text,
+    verified_by uuid references public.profiles(id),
+    verified_at timestamp with time zone,
+    
+    created_at timestamp with time zone default now()
+);
+
+-- 3. لاگ واریزهای کارت به کارت (برای تسویه حساب)
+create table public.card_to_card_logs (
+    id uuid default uuid_generate_v4() primary key,
+    request_id uuid references public.card_to_card_requests(id),
+    user_id uuid references public.profiles(id),
+    amount bigint not null,
+    bank_transaction_id text,                   -- شماره پیگیری بانک
+    card_number_used text,                      -- 4 رقم آخر کارت واریزکننده
+    admin_id uuid references public.profiles(id),
+    verified_at timestamp with time zone default now()
+);
