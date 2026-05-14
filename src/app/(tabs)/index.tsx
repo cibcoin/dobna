@@ -363,3 +363,242 @@ const styles = StyleSheet.create({
         height: 20,
     },
 });
+// src/app/(tabs)/index.tsx
+import React, { useState, useEffect } from 'react';
+import {
+    View,
+    Text,
+    ScrollView,
+    TouchableOpacity,
+    Image,
+    RefreshControl,
+    ActivityIndicator,
+} from 'react-native';
+import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../stores/authStore';
+import { useThemeStore } from '../../stores/themeStore';
+import { colors } from '../../constants/colors';
+
+const ROOM_TIERS = [
+    { id: 1, name: '۵,۰۰۰ تومانی', price: 5000, prize: '۲۴۳,۰۰۰', icon: '💰', gradient: ['#10b98120', '#10b98105'] },
+    { id: 2, name: '۱۰,۰۰۰ تومانی', price: 10000, prize: '۴۸۶,۰۰۰', icon: '💰', gradient: ['#3b82f620', '#3b82f605'] },
+    { id: 3, name: '۲۰,۰۰۰ تومانی', price: 20000, prize: '۹۷۲,۰۰۰', icon: '💰', gradient: ['#8b5cf620', '#8b5cf605'] },
+    { id: 4, name: '۵۰,۰۰۰ تومانی', price: 50000, prize: '۲,۴۳۰,۰۰۰', icon: '💰', gradient: ['#f59e0b20', '#f59e0b05'] },
+    { id: 5, name: '۱۰۰,۰۰۰ تومانی', price: 100000, prize: '۴,۸۶۰,۰۰۰', icon: '💰', gradient: ['#ef444420', '#ef444405'] },
+];
+
+export default function LobbyScreen() {
+    const { user } = useAuthStore();
+    const { theme } = useThemeStore();
+    const currentColors = colors[theme];
+    
+    const [selectedTier, setSelectedTier] = useState<number | null>(null);
+    const [topGroups, setTopGroups] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    useEffect(() => {
+        loadTopGroups();
+    }, []);
+
+    const loadTopGroups = async () => {
+        const { data } = await supabase
+            .from('group_leaderboard')
+            .select(`
+                group_id,
+                rank,
+                score,
+                games_played,
+                groups (id, name, avatar_url, total_members)
+            `)
+            .order('rank', { ascending: true })
+            .limit(5);
+        
+        if (data) {
+            setTopGroups(data);
+        }
+        setLoading(false);
+    };
+
+    const handleTierSelect = async (tierId: number) => {
+        setSelectedTier(tierId);
+        
+        // پیدا کردن بهترین گروه برای این تالار
+        const { data: bestGroup } = await supabase
+            .rpc('find_best_group_for_tier', { p_tier_id: tierId });
+        
+        if (bestGroup) {
+            // هدایت به صفحه بازی در آن گروه
+            router.push({
+                pathname: `/group-game/${bestGroup}`,
+                params: { tierId: tierId.toString() }
+            });
+        } else {
+            // اگر گروهی وجود نداشت، پیشنهاد ساخت گروه
+            router.push({
+                pathname: '/(drawer)/create-group',
+                params: { suggestedTier: tierId, isPublic: true }
+            });
+        }
+    };
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await loadTopGroups();
+        setRefreshing(false);
+    };
+
+    return (
+        <LinearGradient colors={[currentColors.background, currentColors.surface]} style={{ flex: 1 }}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
+                {/* هدر خوش‌آمدگویی */}
+                <View style={{ padding: 20, paddingTop: 50 }}>
+                    <Text style={{ color: currentColors.text, fontSize: 24, fontWeight: 'bold' }}>
+                        خوش آمدی، {user?.username} 👋
+                    </Text>
+                    <Text style={{ color: currentColors.textSecondary, fontSize: 14, marginTop: 4 }}>
+                        به بزرگترین جامعه بینگوی ایران بپیوندید
+                    </Text>
+                </View>
+
+                {/* گروه‌های برتر */}
+                <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
+                    <Text style={{ color: currentColors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
+                        🏆 گروه‌های برتر
+                    </Text>
+                    
+                    {loading ? (
+                        <ActivityIndicator size="large" color={currentColors.primary} />
+                    ) : topGroups.map((group, index) => (
+                        <TouchableOpacity
+                            key={group.group_id}
+                            onPress={() => router.push(`/group/${group.group_id}`)}
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: currentColors.surfaceLight,
+                                borderRadius: 16,
+                                padding: 12,
+                                marginBottom: 8,
+                            }}
+                        >
+                            <View style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20,
+                                backgroundColor: index === 0 ? '#eab308' : index === 1 ? '#94a3b8' : index === 2 ? '#cd7f32' : currentColors.surface,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                            }}>
+                                <Text style={{ color: index < 3 ? '#1a1a2e' : currentColors.text, fontWeight: 'bold', fontSize: 16 }}>
+                                    {group.rank}
+                                </Text>
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 12 }}>
+                                <Text style={{ color: currentColors.text, fontWeight: 'bold' }}>
+                                    {group.groups?.name}
+                                </Text>
+                                <Text style={{ color: currentColors.textSecondary, fontSize: 12 }}>
+                                    👥 {group.groups?.total_members} عضو | 🎮 {group.games_played} بازی
+                                </Text>
+                            </View>
+                            <Text style={{ color: currentColors.primary, fontWeight: 'bold' }}>
+                                {group.score} امتیاز
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                {/* تالارهای بازی */}
+                <Text style={{ color: currentColors.text, fontSize: 18, fontWeight: 'bold', marginHorizontal: 16, marginBottom: 12 }}>
+                    🎲 تالارهای بازی
+                </Text>
+                
+                {ROOM_TIERS.map((tier) => (
+                    <TouchableOpacity
+                        key={tier.id}
+                        onPress={() => handleTierSelect(tier.id)}
+                        style={{
+                            marginHorizontal: 16,
+                            marginBottom: 12,
+                            borderRadius: 16,
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <LinearGradient
+                            colors={tier.gradient}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                padding: 16,
+                                borderWidth: 1,
+                                borderColor: currentColors.border,
+                                borderRadius: 16,
+                            }}
+                        >
+                            <View style={{
+                                width: 50,
+                                height: 50,
+                                borderRadius: 25,
+                                backgroundColor: currentColors.surfaceLight,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                            }}>
+                                <Text style={{ fontSize: 24 }}>{tier.icon}</Text>
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 12 }}>
+                                <Text style={{ color: currentColors.text, fontSize: 16, fontWeight: 'bold' }}>
+                                    {tier.name}
+                                </Text>
+                                <Text style={{ color: currentColors.textSecondary, fontSize: 12 }}>
+                                    حداکثر جایزه: {tier.prize.toLocaleString()} تومان
+                                </Text>
+                            </View>
+                            <View style={{
+                                backgroundColor: currentColors.primary,
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 20,
+                            }}>
+                                <Text style={{ color: '#1a1a2e', fontWeight: 'bold', fontSize: 12 }}>
+                                    شرکت
+                                </Text>
+                            </View>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                ))}
+
+                {/* دکمه ساخت گروه جدید */}
+                <TouchableOpacity
+                    onPress={() => router.push('/(drawer)/create-group')}
+                    style={{
+                        margin: 16,
+                        backgroundColor: currentColors.primary + '20',
+                        padding: 16,
+                        borderRadius: 16,
+                        alignItems: 'center',
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        borderWidth: 1,
+                        borderColor: currentColors.primary + '40',
+                        borderStyle: 'dashed',
+                    }}
+                >
+                    <Text style={{ fontSize: 20, marginRight: 8 }}>➕</Text>
+                    <Text style={{ color: currentColors.primary, fontWeight: 'bold', fontSize: 14 }}>
+                        ساخت گروه جدید و شروع بازی
+                    </Text>
+                </TouchableOpacity>
+                
+                <View style={{ height: 40 }} />
+            </ScrollView>
+        </LinearGradient>
+    );
+}
