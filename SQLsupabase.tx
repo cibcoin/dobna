@@ -2946,3 +2946,66 @@ CREATE TABLE public.crypto_deposit_addresses (
     expires_at timestamptz,
     created_at timestamptz DEFAULT now()
 );
+
+-- ============================================
+-- جداول مدیریت رمز ارز
+-- ============================================
+
+-- 1. تنظیمات کیف پول‌های دوبنا
+create table public.crypto_wallet_settings (
+    id integer primary key default 1,
+    -- کیف پول USDT (TRC20)
+    usdt_address text not null,
+    usdt_network text default 'TRC20',
+    -- کیف پول Solana
+    solana_address text not null,
+    solana_network text default 'Solana',
+    -- تنظیمات کلی
+    is_active boolean default true,
+    updated_at timestamp with time zone default now()
+);
+
+-- 2. درخواست‌های واریز رمز ارز
+create table public.crypto_deposit_requests (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    currency text not null check (currency in ('USDT', 'SOL')),
+    amount_crypto numeric,                    -- مقدار رمز ارز (پس از واریز پر می‌شود)
+    amount_toman numeric,                     -- معادل تومانی
+    exchange_rate numeric,                    -- نرخ تبدیل لحظه‌ای
+    wallet_address text not null,             -- آدرس واریز اختصاصی
+    transaction_hash text,                    -- هش تراکنش در بلاکچین
+    status text default 'pending' check (status in ('pending', 'confirmed', 'completed', 'expired', 'failed')),
+    confirmed_at timestamp with time zone,
+    completed_at timestamp with time zone,
+    expires_at timestamp with time zone,      -- انقضای آدرس واریز
+    created_at timestamp with time zone default now()
+);
+
+-- 3. درخواست‌های برداشت رمز ارز
+create table public.crypto_withdraw_requests (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    currency text not null check (currency in ('USDT', 'SOL')),
+    amount_crypto numeric not null,
+    amount_toman numeric not null,
+    exchange_rate numeric not null,
+    destination_address text not null,        -- آدرس کیف پول کاربر
+    transaction_hash text,                    -- هش تراکنش خروجی
+    status text default 'pending' check (status in ('pending', 'processing', 'completed', 'rejected')),
+    admin_note text,
+    processed_by uuid references public.profiles(id),
+    created_at timestamp with time zone default now(),
+    processed_at timestamp with time zone
+);
+
+-- 4. نرخ‌های لحظه‌ای ارزها (برای محاسبات)
+create table public.exchange_rates (
+    id uuid default uuid_generate_v4() primary key,
+    currency text not null check (currency in ('USDT', 'SOL')),
+    rate_to_toman numeric not null,           -- نرخ تبدیل به تومان
+    spread_percent numeric default 1,          -- اسپرد (1% = کارمزد پنهان)
+    effective_rate numeric,                   -- نرخ مؤثر پس از اسپرد
+    source text,
+    fetched_at timestamp with time zone default now()
+);
