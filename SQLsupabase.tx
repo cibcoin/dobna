@@ -2277,3 +2277,603 @@ create trigger trigger_auto_start_group_game
     after update on public.group_games
     for each row
     execute function auto_start_group_game();
+
+
+
+
+-- ============================================
+-- دیتابیس کامل دوبنا (DOBNA)
+-- شامل همه جداول مورد نیاز برای بازی بینگو
+-- ============================================
+
+-- ============================================
+-- 1. جداول اصلی کاربران و احراز هویت
+-- ============================================
+
+-- 1.1 پروفایل کاربران (تکمیل کننده auth.users)
+create table public.profiles (
+    id uuid references auth.users on delete cascade primary key,
+    
+    -- اطلاعات پایه
+    phone text unique,                          -- شماره تلفن
+    email text unique,                          -- ایمیل
+    username text unique not null,              -- نام کاربری (یکتا)
+    display_name text,                          -- نام قابل نمایش برای همه
+    full_name text,                             -- نام واقعی
+    national_code text,                         -- کد ملی
+    avatar_url text,                            -- آواتار کاربر
+    
+    -- آیدی اختصاصی دوبنا (ID Chat) - 10 رقمی
+    dobna_id text unique,                       -- شماره حساب 10 رقمی منحصربفرد
+    
+    -- وضعیت کاربر
+    is_verified boolean default false,          -- تیک آبی
+    is_active boolean default true,             -- فعال/غیرفعال
+    is_banned boolean default false,            -- مسدود شده توسط پشتیبانی
+    ban_reason text,                            -- دلیل مسدودیت
+    banned_at timestamp with time zone,         -- تاریخ مسدودیت
+    
+    -- کیف پول
+    balance bigint default 0,                   -- موجودی کیف پول
+    total_won bigint default 0,                 -- مجموع مبالغ برنده شده
+    total_commission_paid bigint default 0,     -- مجموع کمیسیون‌های پرداختی
+    
+    -- اطلاعات بانکی
+    bank_name text,                             -- نام بانک
+    card_number text,                           -- شماره کارت بانکی
+    shaba_number text,                          -- شماره شبا
+    
+    -- آمار
+    total_games_played integer default 0,       -- کل بازی‌های انجام شده
+    total_cards_used integer default 0,         -- کل کارت‌های استفاده شده
+    invite_code text unique,                    -- کد دعوت اختصاصی
+    invited_by uuid references public.profiles(id), -- دعوت شده توسط
+    
+    -- زمان‌ها
+    created_at timestamp with time zone default now(),
+    updated_at timestamp with time zone default now(),
+    last_login timestamp with time zone,
+    
+    -- محدودیت‌ها
+    check (length(dobna_id) = 10)               -- اطمینان از 10 رقمی بودن
+);
+
+-- 1.2 حساب مرکزی دوبنا
+create table public.central_account (
+    id integer primary key default 1,
+    account_number text unique default '1111111111',
+    balance bigint default 0,
+    total_commission bigint default 0,
+    total_locked_private_groups bigint default 0,   -- قفل گروه‌های خصوصی
+    total_locked_public_groups bigint default 0,    -- قفل گروه‌های عمومی
+    updated_at timestamp with time zone default now()
+);
+
+-- 1.3 حساب‌های کاربران (کیف پول اصلی)
+create table public.user_accounts (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) on delete cascade unique,
+    account_number text unique not null,        -- شماره حساب 10 رقمی
+    balance bigint default 0,                   -- موجودی آزاد
+    locked_balance bigint default 0,            -- موجودی قفل شده (برای گروه‌ها)
+    created_at timestamp with time zone default now(),
+    updated_at timestamp with time zone default now()
+);
+
+-- ============================================
+-- 2. جداول تراکنش‌ها و مالی
+-- ============================================
+
+-- 2.1 تراکنش‌های مالی
+create table public.transactions (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    type text not null check (type in (
+        'deposit', 'withdraw', 'transfer_in', 'transfer_out',
+        'game_entry', 'game_win_line', 'game_win_full',
+        'commission_paid', 'commission_earned', 'group_lock', 'group_unlock'
+    )),
+    amount bigint not null,
+    balance_before bigint not null,
+    balance_after bigint not null,
+    fee bigint default 0,
+    net_amount bigint,
+    description text,
+    reference_id text,                          -- شماره پیگیری/ارجاع
+    from_user_id uuid references public.profiles(id),
+    to_user_id uuid references public.profiles(id),
+    game_id uuid,
+    group_id uuid,
+    status text default 'pending' check (status in ('pending', 'completed', 'failed', 'cancelled')),
+    
+    -- فیلدهای درگاه پرداخت
+    payment_authority text,
+    payment_ref_id text,
+    
+    -- جزئیات ریز تراکنش برای هر بازی
+    game_tier integer,                          -- 5000, 10000, 20000, 50000, 100000
+    cards_count integer,                        -- تعداد کارت‌های خریداری شده
+    cards_price_per_unit integer,               -- قیمت هر کارت
+    
+    created_at timestamp with time zone default now(),
+    completed_at timestamp with time zone
+);
+
+-- 2.2 درخواست‌های برداشت
+create table public.withdraw_requests (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    amount bigint not null,
+    bank_name text not null,
+    card_number text not null,
+    account_holder text not null,
+    shaba_number text,
+    status text default 'pending' check (status in ('pending', 'processing', 'completed', 'rejected')),
+    admin_note text,
+    transaction_id uuid references public.transactions(id),
+    processed_by uuid references public.profiles(id),
+    created_at timestamp with time zone default now(),
+    processed_at timestamp with time zone
+);
+
+-- 2.3 لاگ انتقالات داخلی (کاربر به کاربر)
+create table public.internal_transfers_log (
+    id uuid default uuid_generate_v4() primary key,
+    from_user_id uuid references public.profiles(id),
+    to_user_id uuid references public.profiles(id),
+    from_account text,
+    to_account text,
+    amount bigint not null,
+    fee bigint default 0,
+    net_amount bigint not null,
+    from_balance_before bigint,
+    from_balance_after bigint,
+    to_balance_before bigint,
+    to_balance_after bigint,
+    description text,
+    created_at timestamp with time zone default now()
+);
+
+-- ============================================
+-- 3. جداول گروه‌ها
+-- ============================================
+
+-- 3.1 گروه‌ها (عمومی و خصوصی)
+create table public.groups (
+    id uuid default uuid_generate_v4() primary key,
+    name text not null,                         -- نام گروه
+    username text unique,                       -- نام کاربری گروه (مانند @groupname)
+    description text,                           -- توضیحات گروه
+    avatar_url text,                            -- آواتار گروه
+    type text not null check (type in ('public', 'private')),
+    invite_link text unique,                    -- لینک دعوت گروه
+    
+    -- مالک گروه
+    owner_id uuid references public.profiles(id) not null,
+    owner_username text,
+    
+    -- وضعیت گروه
+    is_verified boolean default false,          -- تیک آبی گروه
+    is_active boolean default true,
+    
+    -- آمار گروه
+    total_members integer default 1,
+    total_games_played integer default 0,       -- کل بازی‌های انجام شده
+    total_cards_used integer default 0,         -- کل کارت‌های استفاده شده
+    
+    -- آمار تفکیکی بر اساس تالار
+    games_played_5000 integer default 0,
+    games_played_10000 integer default 0,
+    games_played_20000 integer default 0,
+    games_played_50000 integer default 0,
+    games_played_100000 integer default 0,
+    
+    cards_used_5000 integer default 0,
+    cards_used_10000 integer default 0,
+    cards_used_20000 integer default 0,
+    cards_used_50000 integer default 0,
+    cards_used_100000 integer default 0,
+    
+    commission_earned_today bigint default 0,
+    commission_earned_this_month bigint default 0,
+    commission_earned_this_year bigint default 0,
+    total_commission_earned bigint default 0,   -- کل کمیسیون دریافتی
+    
+    -- مبالغ قفل شده
+    locked_amount bigint default 0,
+    lock_id uuid,
+    
+    -- امتیاز رتبه‌بندی
+    rank_score integer default 0,
+    
+    created_at timestamp with time zone default now(),
+    updated_at timestamp with time zone default now()
+);
+
+-- 3.2 اعضای گروه
+create table public.group_members (
+    group_id uuid references public.groups(id) on delete cascade,
+    user_id uuid references public.profiles(id) on delete cascade,
+    role text default 'member' check (role in ('owner', 'admin', 'member')),
+    joined_at timestamp with time zone default now(),
+    primary key (group_id, user_id)
+);
+
+-- 3.3 قفل‌های گروه (برای ساخت گروه)
+create table public.group_locks (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    group_id uuid references public.groups(id),
+    amount bigint not null,
+    lock_type text check (lock_type in ('private_group', 'public_group')),
+    status text default 'locked' check (status in ('locked', 'released', 'forfeited')),
+    locked_at timestamp with time zone default now(),
+    released_at timestamp with time zone,
+    notes text
+);
+
+-- 3.4 رتبه‌بندی گروه‌ها
+create table public.group_leaderboard (
+    group_id uuid references public.groups(id) primary key,
+    rank integer,
+    score integer default 0,
+    games_played integer default 0,
+    total_wins integer default 0,
+    updated_at timestamp with time zone default now()
+);
+
+-- ============================================
+-- 4. جداول بازی
+-- ============================================
+
+-- 4.1 بازی‌های گروه
+create table public.group_games (
+    id uuid default uuid_generate_v4() primary key,
+    group_id uuid references public.groups(id) on delete cascade,
+    tier_id integer not null,                    -- 5000, 10000, 20000, 50000, 100000
+    status text default 'waiting' check (status in ('waiting', 'active', 'finished', 'cancelled')),
+    
+    -- آمار بازی
+    total_cards integer default 0,               -- حداکثر 60 کارت
+    total_players integer default 0,
+    current_cards integer default 0,
+    
+    -- اعداد اعلام شده
+    called_numbers integer[] default '{}',
+    current_number integer,
+    
+    -- جوایز (بر اساس 60 کارت)
+    line_prize bigint,
+    full_house_prize bigint,
+    
+    -- برندگان
+    line_winner_id uuid references public.profiles(id),
+    line_winner_name text,
+    line_winner_prize bigint,
+    full_house_winner_id uuid references public.profiles(id),
+    full_house_winner_name text,
+    full_house_winner_prize bigint,
+    
+    -- کمیسیون
+    platform_commission bigint default 0,        -- سهم پلتفرم
+    group_commission bigint default 0,           -- سهم گروه
+    
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    created_at timestamp with time zone default now()
+);
+
+-- 4.2 کارت‌های بازی (60 کارت استاندارد)
+create table public.game_cards (
+    id uuid default uuid_generate_v4() primary key,
+    game_id uuid references public.group_games(id) on delete cascade,
+    user_id uuid references public.profiles(id),
+    card_number integer,                         -- 1 تا 60
+    card_data integer[][],                       -- آرایه 3x9 (0 برای خالی)
+    marked_numbers integer[] default '{}',
+    line_completed boolean[] default '{false, false, false}',
+    is_winner_line boolean default false,
+    is_winner_full boolean default false,
+    created_at timestamp with time zone default now()
+);
+
+-- 4.3 کارت‌های استاندارد دوبنا (مرجع ثابت)
+create table public.standard_cards (
+    card_number integer primary key,             -- 1 تا 60
+    row1 integer[] not null,                    -- 9 عدد (0 نشان‌دهنده خالی)
+    row2 integer[] not null,
+    row3 integer[] not null,
+    created_at timestamp with time zone default now()
+);
+
+-- ============================================
+-- 5. جداول چت و پیام‌ها
+-- ============================================
+
+-- 5.1 پیام‌های عمومی (سیستم به همه کاربران)
+create table public.system_messages (
+    id uuid default uuid_generate_v4() primary key,
+    title text not null,
+    message text not null,
+    target text default 'all' check (target in ('all', 'specific_users', 'specific_group')),
+    target_users uuid[],                         -- لیست کاربران هدف
+    target_group_id uuid,
+    is_read boolean default false,
+    created_by uuid references public.profiles(id),
+    created_at timestamp with time zone default now(),
+    expires_at timestamp with time zone
+);
+
+-- 5.2 پیام‌های چت گروهی
+create table public.group_chat_messages (
+    id bigint generated by default as identity primary key,
+    group_id uuid references public.groups(id) on delete cascade,
+    user_id uuid references public.profiles(id) not null,
+    message text not null check (char_length(message) <= 500),
+    created_at timestamp with time zone default now()
+);
+
+-- 5.3 پیام‌های کاربر به کاربر (خصوصی)
+create table public.private_messages (
+    id uuid default uuid_generate_v4() primary key,
+    from_user_id uuid references public.profiles(id) not null,
+    to_user_id uuid references public.profiles(id) not null,
+    message text not null check (char_length(message) <= 500),
+    is_read boolean default false,
+    created_at timestamp with time zone default now()
+);
+
+-- 5.4 پیام‌های پشتیبانی (تیکت‌ها)
+create table public.support_tickets (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    subject text not null,
+    message text not null,
+    status text default 'pending' check (status in ('pending', 'in_progress', 'resolved', 'closed')),
+    admin_response text,
+    resolved_by uuid references public.profiles(id),
+    created_at timestamp with time zone default now(),
+    resolved_at timestamp with time zone
+);
+
+-- 5.5 پیام‌های سیستم به کاربر (اعلانات شخصی)
+create table public.user_notifications (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    title text not null,
+    message text not null,
+    type text check (type in ('info', 'success', 'warning', 'error')),
+    is_read boolean default false,
+    action_url text,
+    created_at timestamp with time zone default now()
+);
+
+-- ============================================
+-- 6. جداول گزارش‌ها و تخلفات
+-- ============================================
+
+-- 6.1 گزارش تخلف کاربران
+create table public.reports (
+    id uuid default uuid_generate_v4() primary key,
+    reporter_user_id uuid references public.profiles(id) not null,  -- گزارش‌دهنده
+    reported_user_id uuid references public.profiles(id) not null,  -- گزارش‌شونده
+    reason text not null,
+    description text,
+    evidence_url text,                          -- مدرک (تصویر/فیلم)
+    status text default 'pending' check (status in ('pending', 'reviewed', 'resolved', 'rejected')),
+    admin_note text,
+    resolved_by uuid references public.profiles(id),
+    created_at timestamp with time zone default now(),
+    resolved_at timestamp with time zone
+);
+
+-- 6.2 تاریخچه برندگان (برای گزارشات مالی)
+create table public.winners_history (
+    id uuid default uuid_generate_v4() primary key,
+    game_id uuid references public.group_games(id),
+    group_id uuid references public.groups(id),
+    winner_type text check (winner_type in ('line', 'full_house')),
+    winner_user_id uuid references public.profiles(id),
+    winner_user_name text not null,
+    card_number integer,
+    line_index integer,
+    prize_amount bigint not null,
+    is_shared boolean default false,
+    shared_with integer default 1,
+    created_at timestamp with time zone default now()
+);
+
+-- 6.3 آمار روزانه کارت‌های برنده
+create table public.daily_card_stats (
+    id uuid default uuid_generate_v4() primary key,
+    stat_date date not null,
+    card_number integer not null,
+    win_count integer default 0,
+    win_type text check (win_type in ('line', 'full_house')),
+    total_prize bigint default 0,
+    created_at timestamp with time zone default now(),
+    unique(stat_date, card_number, win_type)
+);
+
+-- ============================================
+-- 7. جداول پاداش و دعوت
+-- ============================================
+
+-- 7.1 پاداش دعوت
+create table public.referral_rewards (
+    id uuid default uuid_generate_v4() primary key,
+    referrer_id uuid references public.profiles(id) not null,   -- دعوت‌کننده
+    referred_id uuid references public.profiles(id) not null,   -- دعوت‌شونده
+    reward_amount bigint default 0,
+    status text default 'pending' check (status in ('pending', 'paid', 'expired')),
+    paid_at timestamp with time zone,
+    created_at timestamp with time zone default now()
+);
+
+-- 7.2 تنظیمات سیستم (پویا)
+create table public.system_settings (
+    key text primary key,
+    value jsonb,
+    description text,
+    updated_at timestamp with time zone default now()
+);
+
+-- ============================================
+-- 8. ایندکس‌ها برای بهبود عملکرد
+-- ============================================
+
+-- ایندکس‌های پروفایل
+create index idx_profiles_username on public.profiles(username);
+create index idx_profiles_phone on public.profiles(phone);
+create index idx_profiles_dobna_id on public.profiles(dobna_id);
+create index idx_profiles_is_active on public.profiles(is_active);
+create index idx_profiles_invite_code on public.profiles(invite_code);
+
+-- ایندکس‌های تراکنش
+create index idx_transactions_user_id on public.transactions(user_id);
+create index idx_transactions_created_at on public.transactions(created_at);
+create index idx_transactions_type on public.transactions(type);
+create index idx_transactions_status on public.transactions(status);
+
+-- ایندکس‌های گروه
+create index idx_groups_owner_id on public.groups(owner_id);
+create index idx_groups_type on public.groups(type);
+create index idx_groups_rank_score on public.groups(rank_score desc);
+create index idx_groups_is_active on public.groups(is_active);
+
+-- ایندکس‌های بازی
+create index idx_group_games_group_id on public.group_games(group_id);
+create index idx_group_games_status on public.group_games(status);
+create index idx_group_games_created_at on public.group_games(created_at desc);
+create index idx_game_cards_game_id on public.game_cards(game_id);
+create index idx_game_cards_user_id on public.game_cards(user_id);
+
+-- ایندکس‌های چت
+create index idx_group_chat_messages_group_id on public.group_chat_messages(group_id, created_at desc);
+create index idx_private_messages_from_user on public.private_messages(from_user_id);
+create index idx_private_messages_to_user on public.private_messages(to_user_id);
+create index idx_support_tickets_user_id on public.support_tickets(user_id);
+create index idx_support_tickets_status on public.support_tickets(status);
+
+-- ایندکس‌های گزارش
+create index idx_reports_reported_user on public.reports(reported_user_id);
+create index idx_reports_status on public.reports(status);
+create index idx_winners_history_created_at on public.winners_history(created_at desc);
+create index idx_daily_card_stats_date on public.daily_card_stats(stat_date);
+
+-- ============================================
+-- 9. داده‌های اولیه
+-- ============================================
+
+-- درج کارت‌های استاندارد (60 کارت) - بخش اول
+insert into public.standard_cards (card_number, row1, row2, row3) values
+(1, ARRAY[1,0,22,0,45,53,0,78,0], ARRAY[0,14,0,37,0,0,67,0,85], ARRAY[7,0,0,32,48,59,0,72,90]),
+(2, ARRAY[0,11,23,35,0,0,64,0,83], ARRAY[5,0,0,0,44,58,0,77,0], ARRAY[0,18,29,0,49,0,61,79,86]),
+(3, ARRAY[3,0,0,31,0,56,68,0,81], ARRAY[0,12,28,0,42,0,0,73,0], ARRAY[9,0,0,38,47,0,69,0,88]),
+-- ... ادامه تا 60 (برای اختصار، بقیه کارت‌ها اضافه می‌شود)
+
+-- درج حساب مرکزی
+insert into public.central_account (account_number) values ('1111111111')
+on conflict (id) do nothing;
+
+-- درج تنظیمات اولیه سیستم
+insert into public.system_settings (key, value, description) values
+('transfer_limits', '{"min_amount": 10000, "max_amount": 1000000, "daily_limit": 10000000}', 'محدودیت‌های انتقال اعتبار'),
+('game_commission', '{"platform_percent": 10, "line_percent": 9, "full_percent": 81, "group_commission_percent": 50}', 'درصد کمیسیون‌ها'),
+('group_lock_amounts', '{"private_group": 1000000, "public_group": 10000000}', 'مبالغ قفل برای ساخت گروه'),
+('referral_reward', '{"amount": 5000, "max_per_user": 500000}', 'پاداش دعوت');
+
+-- ============================================
+-- 10. قوانین امنیتی (RLS)
+-- ============================================
+
+-- فعال‌سازی RLS در همه جداول
+alter table public.profiles enable row level security;
+alter table public.user_accounts enable row level security;
+alter table public.transactions enable row level security;
+alter table public.groups enable row level security;
+alter table public.group_members enable row level security;
+alter table public.group_games enable row level security;
+alter table public.game_cards enable row level security;
+alter table public.group_chat_messages enable row level security;
+alter table public.private_messages enable row level security;
+alter table public.support_tickets enable row level security;
+alter table public.reports enable row level security;
+
+-- سیاست‌های دسترسی (نمونه)
+create policy "Users can view own profile"
+    on public.profiles for select using (auth.uid() = id);
+
+create policy "Users can update own profile"
+    on public.profiles for update using (auth.uid() = id);
+
+create policy "Users can view their own transactions"
+    on public.transactions for select using (auth.uid() = user_id);
+
+create policy "Members can view group messages"
+    on public.group_chat_messages for select using (
+        exists (select 1 from public.group_members where group_members.group_id = group_chat_messages.group_id and group_members.user_id = auth.uid())
+    );
+
+-- ============================================
+-- 11. توابع کمکی
+-- ============================================
+
+-- تابع تولید شماره حساب 10 رقمی یکتا
+create or replace function generate_dobna_id()
+returns text
+language plpgsql
+as $$
+declare
+    new_id text;
+    exists_id boolean;
+begin
+    loop
+        new_id := floor(random() * 9000000000 + 1000000000)::text;
+        select exists(select 1 from public.profiles where dobna_id = new_id) into exists_id;
+        exit when not exists_id;
+    end loop;
+    return new_id;
+end;
+$$;
+
+-- تابع ایجاد خودکار پروفایل
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+    new_dobna_id text;
+    new_username text;
+begin
+    -- تولید شماره دوبنا
+    new_dobna_id := generate_dobna_id();
+    
+    -- تولید نام کاربری پیش‌فرض
+    new_username := coalesce(new.raw_user_meta_data->>'username', 'user_' || substr(md5(random()::text), 1, 8));
+    
+    -- ایجاد پروفایل
+    insert into public.profiles (
+        id, phone, email, username, display_name, dobna_id
+    ) values (
+        new.id,
+        new.phone,
+        new.email,
+        new_username,
+        coalesce(new.raw_user_meta_data->>'full_name', new_username),
+        new_dobna_id
+    );
+    
+    -- ایجاد حساب کاربری
+    insert into public.user_accounts (user_id, account_number)
+    values (new.id, new_dobna_id);
+    
+    return new;
+end;
+$$;
+
+-- تریگر برای ایجاد خودکار پروفایل
+create trigger on_auth_user_created
+    after insert on auth.users
+    for each row execute function public.handle_new_user();
