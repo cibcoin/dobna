@@ -107,3 +107,44 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ error: 'Unknown event' }), { status: 400 });
 });
+
+
+
+// تابع برای اضافه کردن موجودی پس از تأیید واریز واقعی
+async function confirmDeposit(userId: string, amount: number, txHash: string) {
+  // شروع تراکنش دیتابیس (Atomic)
+  // ۱. بروزرسانی موجودی مجازی کاربر
+  await supabase.rpc('increment_user_sol_balance', { 
+    p_user_id: userId, 
+    p_amount: amount 
+  });
+  
+  // ۲. ثبت درخواست واریز به عنوان completed
+  await supabase
+    .from('crypto_deposit_requests')
+    .update({ status: 'completed', confirmed_at: new Date() })
+    .eq('tx_hash', txHash);
+}
+
+// تابع برای انتقال داخلی (فقط آپدیت دیتابیس - بدون گس)
+async function internalTransfer(fromUserId: string, toUserId: string, amount: number) {
+  // ۱. کم کردن از موجودی فرستنده
+  await supabase.rpc('decrement_user_sol_balance', { 
+    p_user_id: fromUserId, 
+    p_amount: amount 
+  });
+  
+  // ۲. اضافه کردن به موجودی گیرنده
+  await supabase.rpc('increment_user_sol_balance', { 
+    p_user_id: toUserId, 
+    p_amount: amount 
+  });
+  
+  // ۳. ثبت لاگ انتقال داخلی
+  await supabase.from('internal_crypto_transfers').insert({
+    from_user_id: fromUserId,
+    to_user_id: toUserId,
+    currency: 'SOL',
+    amount: amount
+  });
+}
