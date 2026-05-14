@@ -3009,3 +3009,59 @@ create table public.exchange_rates (
     source text,
     fetched_at timestamp with time zone default now()
 );
+-- ============================================
+-- جداول مدیریت کیف پول داخلی سولانا
+-- ============================================
+
+-- 1. تنظیمات کیف پول اصلی دوبنا (تنها یک رکورد)
+create table public.dobna_crypto_wallet (
+    id integer primary key default 1,
+    solana_address text not null,               -- آدرس عمومی کیف پول اصلی دوبنا
+    created_at timestamp with time zone default now()
+);
+
+-- 2. موجودی رمز ارز کاربران (موجودی مجازی درون برنامه‌ای)
+create table public.user_crypto_balances (
+    user_id uuid references public.profiles(id) primary key,
+    sol_balance numeric default 0,              -- موجودی سولانا مجازی (نه واقعی)
+    usdt_balance numeric default 0,             -- موجودی USDT مجازی
+    updated_at timestamp with time zone default now()
+);
+
+-- 3. درخواست‌های واریز (ذخیره اطلاعات تراکنش‌های واقعی بلاکچین)
+create table public.crypto_deposit_requests (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    tx_hash text unique not null,               -- هش تراکنش در بلاکچین
+    from_address text not null,                 -- آدرس فرستنده
+    to_address text not null,                   -- آدرس گیرنده (کیف پول دوبنا)
+    currency text check (currency in ('SOL', 'USDT')),
+    amount numeric not null,                    -- مقدار دریافتی
+    confirmations integer default 0,
+    status text default 'pending' check (status in ('pending', 'confirmed', 'completed')),
+    created_at timestamp with time zone default now(),
+    confirmed_at timestamp with time zone
+);
+
+-- 4. درخواست‌های برداشت (برای پرداخت واقعی از طرف ادمین)
+create table public.crypto_withdraw_requests (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references public.profiles(id) not null,
+    to_address text not null,                   -- آدرس مقصد کاربر
+    currency text check (currency in ('SOL', 'USDT')),
+    amount numeric not null,                    -- مقدار درخواستی
+    status text default 'pending' check (status in ('pending', 'processing', 'completed', 'rejected')),
+    tx_hash text,                               -- هش تراکنش خروجی (پس از پرداخت)
+    created_at timestamp with time zone default now(),
+    processed_at timestamp with time zone
+);
+
+-- 5. لاگ انتقالات داخلی (بین کاربران دوبنا)
+create table public.internal_crypto_transfers (
+    id uuid default uuid_generate_v4() primary key,
+    from_user_id uuid references public.profiles(id) not null,
+    to_user_id uuid references public.profiles(id) not null,
+    currency text check (currency in ('SOL', 'USDT')),
+    amount numeric not null,
+    created_at timestamp with time zone default now()
+);
