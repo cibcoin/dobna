@@ -2927,3 +2927,22 @@ create table public.card_to_card_logs (
     admin_id uuid references public.profiles(id),
     verified_at timestamp with time zone default now()
 );
+
+-- 1. اضافه کردن فیلدهای رمز ارز به جدول تراکنش‌ها (Transactions)
+ALTER TABLE public.transactions
+ADD COLUMN crypto_currency text,      -- 'USDT', 'SOL'
+ADD COLUMN crypto_amount numeric,     -- مقدار رمز ارز
+ADD COLUMN exchange_rate numeric;     -- نرخ تبدیل در لحظه واریز
+
+-- 2. جدول آدرس‌های واریز موقت (برای امنیت بیشتر)
+CREATE TABLE public.crypto_deposit_addresses (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id uuid REFERENCES public.profiles(id),
+    transaction_id uuid REFERENCES public.transactions(id),
+    address text NOT NULL,              -- آدرس واریز یکتا
+    currency text NOT NULL,
+    expected_amount numeric,            -- مبلغ دقیق مورد انتظار
+    status text DEFAULT 'waiting',      -- waiting, confirmed, expired
+    expires_at timestamptz,
+    created_at timestamptz DEFAULT now()
+);
