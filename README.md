@@ -273,7 +273,7 @@ assets/
 │   │   └── dogecoin.svg                                 # آیکون (دوجکوین)
 │   │   ├── bitcoin.svg                               # آیکون (بیتکوین)
 │   │   └── ethereum.svg                                 # آیکون (اتریوم)
-││   │   ├── bitcoin.svg                               # آیکون (بیتکوین)
+│   │   ├── bitcoin.svg                               # آیکون (بیتکوین)
 │   │   └── ethereum.svg                                 # آیکون (اتریوم)   │
 │   └── social/                                    📱 آیکون‌های شبکه‌های اجتماعی
 │       ├── instagram.svg                          # اینستاگرام
