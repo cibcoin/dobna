@@ -248,7 +248,7 @@ assets/
 │   │   ├── usdt.svg                               # آیکون (تتر)
 │   │   └── solana.svg                                 # آیکون (سولانا)
 │   │   ├── toncoin.svg                               # آیکون (تون کوین)
-│   │   └── soi.svg                                 # آیکون (سویی)
+│   │   └── sui.svg                                 # آیکون (سویی)
 │   │   ├── bnb.svg                               # آیکون (بایننس کوین)
 │   │   └── dogecoin.svg                                 # آیکون (دوجکوین)
 │   │   ├── bonk.svg                               # آیکون (بونک)
@@ -259,7 +259,7 @@ assets/
 │       ├── instagram.svg                          # اینستاگرام
 │       ├── telegram.svg                           # تلگرام
 │       ├── whatsapp.svg                           # واتساپ
-│       └── eitaa.svg                              # ایتا
+│       └── bale.svg                              # بله
 │
 ├── lottie/                                        🎬 انیمیشن‌های Lottie اضافی
 │   ├── background_flow.json                       # جریان پس‌زمینه
