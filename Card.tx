@@ -192,7 +192,7 @@ insert into public.dobna_cards (card_number, row1, row2, row3) values
  ARRAY[6, 13, 0, 31, 42, 0, 0, 0, 90],
  ARRAY[9, 0, 25, 0, 0, 59, 60, 74, 0]
 ),
--- 3کارت شماره 1
+-- کارت شماره 31
 (31, 
  ARRAY[0, 10, 28, 0, 0, 52, 65, 0, 80],
  ARRAY[5, 0, 0, 32, 41, 0, 68, 0, 81],
